@@ -5,6 +5,7 @@ const API_URL = "http://localhost:3001/api/users"; // Asegúrate de que esta URL
 // Definir el tipo de respuesta para el login
 interface LoginResponse {
   token: string;
+  rol: "admin" | "contador"; // Asegúrate de que la API devuelva este valor
 }
 
 // Iniciar sesión
@@ -19,12 +20,20 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
 
     if (response.data.token) {
       localStorage.setItem("token", response.data.token);
-      window.location.href = "/dashboard"; // Redirigir a Dashboard
+      
+      // Redirigir a Dashboard según el rol
+      if (response.data.rol === "admin") {
+        window.location.href = "/admin-dashboard"; // Redirigir al dashboard del admin
+      } else if (response.data.rol === "contador") {
+        window.location.href = "/contador-dashboard"; // Redirigir al dashboard del contador
+      } else {
+        alert("Rol no reconocido");
+      }
     } else {
       alert("Error en la respuesta del servidor");
     }
 
-    return response.data;
+    return response.data; // Devuelves el token y rol
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const errorMessage = error.response ? error.response.data.message : error.message;

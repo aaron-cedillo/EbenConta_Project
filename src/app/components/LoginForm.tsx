@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { loginUser } from "../services/authService"; // Importar tu servicio de autenticación
+import { useRouter } from "next/router"; // Importamos el hook useRouter para redirigir
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false); // Para manejar el estado de carga
   const [error, setError] = useState(""); // Para manejar errores
+  const router = useRouter(); // Usamos el hook useRouter para redirigir al dashboard adecuado
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +18,15 @@ const LoginPage = () => {
       const response = await loginUser(email, password); // Llamar al servicio de login
       if (response?.token) {
         localStorage.setItem("token", response.token); // Guardar el token en localStorage
-        window.location.href = "/dashboard"; // Redirigir al dashboard si el login es exitoso
+
+        // Redirigir según el rol
+        if (response?.rol === "admin") {
+          router.push("/admin-dashboard"); // Redirigir al dashboard del admin
+        } else if (response?.rol === "contador") {
+          router.push("/contador-dashboard"); // Redirigir al dashboard del contador
+        } else {
+          setError("Rol no reconocido"); // En caso de un rol inesperado
+        }
       }
     } catch (err) {
       setError("Error al iniciar sesión, por favor intenta nuevamente.");
