@@ -6,6 +6,7 @@ const API_URL = "http://localhost:3001/api/users"; // Asegúrate de que esta URL
 interface LoginResponse {
   token: string;
   rol: "admin" | "contador"; // Asegúrate de que la API devuelva este valor
+  nombre: string; // El nombre del usuario
 }
 
 // Iniciar sesión
@@ -19,8 +20,10 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
     const response = await axios.post(`${API_URL}/login`, { email, password });
 
     if (response.data.token) {
+      // Guardar tanto el token como el nombre del usuario en localStorage
       localStorage.setItem("token", response.data.token);
-      
+      localStorage.setItem("nombre", response.data.nombre); // Guardar el nombre del usuario
+
       // Redirigir a Dashboard según el rol
       if (response.data.rol === "admin") {
         window.location.href = "/AdminDashboard"; // Redirigir al dashboard del admin
@@ -33,7 +36,7 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
       alert("Error en la respuesta del servidor");
     }
 
-    return response.data; // Devuelves el token y rol
+    return response.data; // Devuelves el token, rol y nombre
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const errorMessage = error.response ? error.response.data.message : error.message;
@@ -70,8 +73,14 @@ export const getUser = () => {
   }
 };
 
+// Obtener el nombre del usuario desde localStorage
+export const getUserName = () => {
+  return localStorage.getItem("nombre");
+};
+
 // Cerrar sesión
 export const logoutUser = () => {
   localStorage.removeItem("token");
+  localStorage.removeItem("nombre"); // Eliminar el nombre también
   window.location.href = "/login"; // Redirigir a la página de login
 };

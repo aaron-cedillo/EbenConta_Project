@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { getUserName } from '../services/authService'; // Importar la función para obtener el nombre
 
 interface Contador {
   UsuarioID: number;
@@ -13,6 +15,7 @@ interface Contador {
 }
 
 const AdminDashboard = () => {
+  const router = useRouter();
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -22,9 +25,19 @@ const AdminDashboard = () => {
   const [contadores, setContadores] = useState<Contador[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // Control para el modal de logout
+  const [userName, setUserName] = useState(''); // Nombre del usuario logueado
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // Control para el modal de eliminación
+  const [selectedContador, setSelectedContador] = useState<Contador | null>(null); // Contador seleccionado para eliminar
+  const [initialPassword, setInitialPassword] = useState(''); // Para guardar la contraseña inicial
 
   useEffect(() => {
     fetchContadores();
+    // Obtener el nombre del usuario desde localStorage
+    const storedUserName = getUserName();
+    if (storedUserName) {
+      setUserName(storedUserName); // Establecer el nombre del usuario
+    }
   }, []);
 
   const fetchContadores = async () => {
@@ -39,27 +52,22 @@ const AdminDashboard = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');  // Resetear mensaje de error al intentar registrar
+    setErrorMessage('');
     try {
+      const updatedData: { nombre: string, correo: string, fechaExpiracion?: string, rol: string, contrasena: string } = {
+        nombre,
+        correo,
+        fechaExpiracion: fechaExpiracion || undefined,
+        rol: 'contador',
+        contrasena: contrasena || initialPassword, // Aseguramos que la contraseña esté siempre presente
+      };
+
       if (editMode && selectedId !== null) {
-        // Modo edición: Actualizar contador existente
-        await axios.put(`http://localhost:3001/api/admin/editar/${selectedId}`, {
-          nombre,
-          correo,
-          contrasena,
-          fechaExpiracion,
-          rol: 'contador',
-        });
+        // Enviar la solicitud de actualización
+        await axios.put(`http://localhost:3001/api/admin/editar/${selectedId}`, updatedData);
         setMessage('Contador actualizado exitosamente');
       } else {
-        // Modo creación: Registrar nuevo contador
-        await axios.post('http://localhost:3001/api/users/register', {
-          nombre,
-          correo,
-          contrasena,
-          fechaExpiracion,
-          rol: 'contador',
-        });
+        await axios.post('http://localhost:3001/api/users/register', updatedData);
         setMessage('Contador registrado exitosamente');
       }
 
@@ -71,24 +79,13 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDelete = async (contadorId: number) => {
-    try {
-      await axios.delete(`http://localhost:3001/api/admin/eliminar/${contadorId}`);
-      setMessage('Contador eliminado exitosamente');
-      // Actualizar la lista sin hacer un fetch completo
-      setContadores(contadores.filter((contador) => contador.UsuarioID !== contadorId));
-    } catch (error) {
-      console.error('Error al eliminar contador:', error);
-      setErrorMessage('Error al eliminar contador');
-    }
-  };
-
   const handleEdit = (contador: Contador) => {
-    setNombre(contador.Nombre || ''); // Asegurar que no sea null
-    setCorreo(contador.Correo || ''); // Asegurar que no sea null
-    setContrasena(''); // No mostrar la contraseña actual
-    setFechaExpiracion(contador.FechaExpiracion || ''); // Asegurar que no sea null
+    setNombre(contador.Nombre || '');
+    setCorreo(contador.Correo || '');
+    setContrasena(''); // Inicializamos contrasena vacía
+    setFechaExpiracion(contador.FechaExpiracion || '');
     setSelectedId(contador.UsuarioID);
+    setInitialPassword(contador.Contrasena); // Guardar la contraseña inicial
     setEditMode(true);
   };
 
@@ -99,10 +96,63 @@ const AdminDashboard = () => {
     setFechaExpiracion('');
     setEditMode(false);
     setSelectedId(null);
+    setInitialPassword(''); // Limpiar la contraseña inicial
+  };
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmarLogout = () => {
+    setShowLogoutModal(false);
+    router.push('/login');
+  };
+
+  const cancelarLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  const handleDeleteContador = (contador: Contador) => {
+    setSelectedContador(contador);
+    setShowDeleteModal(true);
+  };
+
+  const confirmarEliminacion = () => {
+    if (selectedContador) {
+      handleDelete(selectedContador.UsuarioID);
+    }
+    setShowDeleteModal(false);
+  };
+
+  const cancelarEliminacion = () => {
+    setShowDeleteModal(false);
+  };
+
+  // Función para eliminar el contador
+  const handleDelete = async (contadorId: number) => {
+    try {
+      await axios.delete(`http://localhost:3001/api/admin/eliminar/${contadorId}`);
+      setMessage('Contador eliminado exitosamente');
+      setContadores(contadores.filter((contador) => contador.UsuarioID !== contadorId));
+    } catch (error) {
+      console.error('Error al eliminar contador:', error);
+      setErrorMessage('Error al eliminar contador');
+    }
   };
 
   return (
     <div className="p-6 bg-gray-50">
+      {/* Encabezado */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800">{`Bienvenido, ${userName || 'Cargando...'}`}</h2>
+        <button
+          onClick={handleLogout}
+          className="text-red-500 font-semibold hover:text-red-600 focus:ring-2 focus:ring-red-500"
+        >
+          Cerrar sesión
+        </button>
+      </div>
+
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">
         {editMode ? 'Editar Contador' : 'Registrar Contador'}
       </h2>
@@ -133,7 +183,7 @@ const AdminDashboard = () => {
             type="password"
             value={contrasena}
             onChange={(e) => setContrasena(e.target.value)}
-            required={!editMode} 
+            placeholder="******" // Placeholder con asteriscos
             className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
           />
         </div>
@@ -143,7 +193,6 @@ const AdminDashboard = () => {
             type="date"
             value={fechaExpiracion}
             onChange={(e) => setFechaExpiracion(e.target.value)}
-            required
             className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
           />
         </div>
@@ -184,7 +233,7 @@ const AdminDashboard = () => {
                 <button onClick={() => handleEdit(contador)} className="bg-orange-500 text-white py-1 px-3 rounded-md hover:bg-orange-600 focus:ring-2 focus:ring-orange-500 mr-2">
                   Editar
                 </button>
-                <button onClick={() => handleDelete(contador.UsuarioID)} className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500">
+                <button onClick={() => handleDeleteContador(contador)} className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500">
                   Eliminar
                 </button>
               </td>
@@ -192,6 +241,32 @@ const AdminDashboard = () => {
           ))}
         </tbody>
       </table>
+
+      {/* Modal para confirmar cierre de sesión */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-600 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold">¿Estás seguro que deseas cerrar sesión?</h3>
+            <div className="flex justify-between mt-4">
+              <button onClick={cancelarLogout} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">Cancelar</button>
+              <button onClick={confirmarLogout} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-600 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold">¿Estás seguro que deseas eliminar este contador?</h3>
+            <div className="flex justify-between mt-4">
+              <button onClick={cancelarEliminacion} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">Cancelar</button>
+              <button onClick={confirmarEliminacion} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
