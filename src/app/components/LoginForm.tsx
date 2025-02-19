@@ -1,3 +1,4 @@
+'use client';
 import { useState } from "react";
 import { loginUser } from "../services/authService"; // Importar tu servicio de autenticación
 import { useRouter } from "next/router"; // Importamos el hook useRouter para redirigir
@@ -21,7 +22,7 @@ const LoginPage = () => {
 
         // Redirigir según el rol
         if (response?.rol === "admin") {
-          router.push("/admin-dashboard"); // Redirigir al dashboard del admin
+          router.push("/AdminDashboard"); // Redirigir al dashboard del admin
         } else if (response?.rol === "contador") {
           router.push("/contador-dashboard"); // Redirigir al dashboard del contador
         } else {

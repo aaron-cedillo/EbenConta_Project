@@ -23,7 +23,7 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
       
       // Redirigir a Dashboard según el rol
       if (response.data.rol === "admin") {
-        window.location.href = "/admin-dashboard"; // Redirigir al dashboard del admin
+        window.location.href = "/AdminDashboard"; // Redirigir al dashboard del admin
       } else if (response.data.rol === "contador") {
         window.location.href = "/contador-dashboard"; // Redirigir al dashboard del contador
       } else {
