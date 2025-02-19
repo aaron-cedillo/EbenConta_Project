@@ -23,25 +23,53 @@ const LoginPage = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Correo electrónico"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Contraseña"
-          required
-        />
-        {errorMessage && <p>{errorMessage}</p>}
-        <button type="submit">Iniciar sesión</button>
-      </form>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      {/* Mensaje de bienvenida */}
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Bienvenido a EbenConta</h1>
+      </div>
+
+      {/* Formulario de inicio de sesión */}
+      <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Iniciar sesión</h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Correo electrónico</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Introduce tu correo"
+              required
+              className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700">Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Introduce tu contraseña"
+              required
+              className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {errorMessage && (
+            <p className="text-red-500 text-sm text-center mb-4">{errorMessage}</p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-indigo-500 text-white py-3 rounded-md hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-500"
+          >
+            Iniciar sesión
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
