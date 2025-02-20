@@ -23,6 +23,7 @@ const AdminDashboard = () => {
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [contadores, setContadores] = useState<Contador[]>([]);
+  const [filteredContadores, setFilteredContadores] = useState<Contador[]>([]); // Nuevo estado para los contadores filtrados
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false); // Control para el modal de logout
@@ -30,6 +31,7 @@ const AdminDashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false); // Control para el modal de eliminación
   const [selectedContador, setSelectedContador] = useState<Contador | null>(null); // Contador seleccionado para eliminar
   const [initialPassword, setInitialPassword] = useState(''); // Para guardar la contraseña inicial
+  const [searchTerm, setSearchTerm] = useState(''); // Estado para el término de búsqueda
 
   useEffect(() => {
     fetchContadores();
@@ -40,11 +42,27 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  useEffect(() => {
+    // Filtrar contadores por nombre o correo cada vez que cambie el término de búsqueda
+    if (searchTerm.trim() === '') {
+      setFilteredContadores(contadores); // Mostrar todos los contadores si no hay término de búsqueda
+    } else {
+      setFilteredContadores(
+        contadores.filter(
+          (contador) =>
+            contador.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            contador.Correo.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+  }, [searchTerm, contadores]);
+
   const fetchContadores = async () => {
     try {
       const response = await axios.get('http://localhost:3001/api/users');
       const filteredContadores = response.data.filter((contador: Contador) => contador.Rol === 'contador');
       setContadores(filteredContadores);
+      setFilteredContadores(filteredContadores); // Inicializamos la lista de contadores filtrados
     } catch (error) {
       console.error('Error al obtener contadores:', error);
     }
@@ -134,6 +152,7 @@ const AdminDashboard = () => {
       await axios.delete(`http://localhost:3001/api/admin/eliminar/${contadorId}`);
       setMessage('Contador eliminado exitosamente');
       setContadores(contadores.filter((contador) => contador.UsuarioID !== contadorId));
+      setFilteredContadores(filteredContadores.filter((contador) => contador.UsuarioID !== contadorId)); // Actualizamos los contadores filtrados
     } catch (error) {
       console.error('Error al eliminar contador:', error);
       setErrorMessage('Error al eliminar contador');
@@ -213,6 +232,16 @@ const AdminDashboard = () => {
       {message && <p className="text-center text-green-600 font-semibold">{message}</p>}
       {errorMessage && <p className="text-center text-red-600 font-semibold">{errorMessage}</p>}
 
+      <div className="mb-6">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar contador..."
+          className="p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
       <h2 className="text-2xl font-semibold text-gray-800 mt-12 mb-6">Contadores Registrados</h2>
       <table className="w-full table-auto border-collapse bg-white rounded-lg shadow-lg">
         <thead>
@@ -224,7 +253,7 @@ const AdminDashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {contadores.map((contador) => (
+          {filteredContadores.map((contador) => (
             <tr key={contador.UsuarioID} className="border-b">
               <td className="py-2 px-4 text-sm">{contador.Nombre}</td>
               <td className="py-2 px-4 text-sm">{contador.Correo}</td>
