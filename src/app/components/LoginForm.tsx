@@ -24,7 +24,7 @@ const LoginPage = () => {
         if (response?.rol === "admin") {
           router.push("/AdminDashboard"); // Redirigir al dashboard del admin
         } else if (response?.rol === "contador") {
-          router.push("/contador-dashboard"); // Redirigir al dashboard del contador
+          router.push("/ContadorDashboard"); // Redirigir al dashboard del contador
         } else {
           setError("Rol no reconocido"); // En caso de un rol inesperado
         }

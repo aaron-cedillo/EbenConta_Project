@@ -28,7 +28,7 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
       if (response.data.rol === "admin") {
         window.location.href = "/AdminDashboard"; // Redirigir al dashboard del admin
       } else if (response.data.rol === "contador") {
-        window.location.href = "/contador-dashboard"; // Redirigir al dashboard del contador
+        window.location.href = "/ContadorDashboard"; // Redirigir al dashboard del contador
       } else {
         alert("Rol no reconocido");
       }
