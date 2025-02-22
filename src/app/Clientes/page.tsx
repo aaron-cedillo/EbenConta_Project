@@ -1,20 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { addClient, editClient, deleteClient, Cliente } from "../services/clienteService";
 import { getUserName } from "../services/authService";
-import { addClient, getClients, editClient, deleteClient } from "../services/clienteService";
-
-// Definir el tipo Cliente directamente aquí
-interface Cliente {
-  ClienteID: number;
-  Nombre: string;
-  RFC: string;
-  Correo: string;
-  Telefono: string;
-  Direccion: string;
-}
 
 const Clientes = () => {
-  const [clients, setClients] = useState<Cliente[]>([]); // Especificamos que 'clients' es un array de tipo Cliente
+  const [clients, setClients] = useState<Cliente[]>([]);
   const [newClient, setNewClient] = useState({
     nombre: "",
     rfc: "",
@@ -22,54 +12,52 @@ const Clientes = () => {
     telefono: "",
     direccion: "",
   });
-  const [userName, setUserName] = useState<string | null>(null); // Estado para almacenar el nombre del usuario
-  const [editingClient, setEditingClient] = useState<Cliente | null>(null); // Estado para el cliente que estamos editando
+  const [userName, setUserName] = useState<string | null>(null);
+  const [editingClient, setEditingClient] = useState<Cliente | null>(null);
   const [editClientData, setEditClientData] = useState({
     nombre: "",
     rfc: "",
     correo: "",
     telefono: "",
     direccion: "",
-  }); // Estado para los datos del cliente a editar
+  });
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
+  // Obtiene los clientes de la API con useCallback
+  const fetchClients = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/clientes${searchTerm ? `?search=${searchTerm}` : ""}`);
+      const data = await response.json();
+      setClients(data);
+    } catch (error) {
+      console.error("Error al obtener los clientes:", error);
+    }
+  }, [searchTerm]); // Dependencia corregida
+
+  // Ejecutar fetchClients cuando searchTerm cambie
   useEffect(() => {
-    const fetchClients = async () => {
-      const clientData = await getClients();
-      setClients(clientData); // Actualiza la lista de clientes al cargar el componente
-    };
     fetchClients();
-
-    // Obtener el nombre del usuario desde el authService
-    const username = getUserName();
-    setUserName(username);  // Si el nombre del usuario está en localStorage, se muestra
-  }, []);
+    setUserName(getUserName()); // Obtiene el nombre del usuario
+  }, [fetchClients]); // Ahora fetchClients es estable y se incluye como dependencia
 
   const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Obtener el usuarioId desde el token decodificado, o de localStorage si está disponible
     const token = localStorage.getItem("token");
     if (!token) {
       console.error("Usuario no autenticado");
       return;
     }
 
-    // Decodificar el token para obtener el usuarioId (si no lo tienes explícitamente)
-    const user = JSON.parse(atob(token.split('.')[1])); // Aquí es donde decodificas el JWT (asegurate de que este es el formato)
-    const usuarioId = user?.id; // Suponiendo que 'id' es el campo que contiene el usuarioId.
-
-    if (!usuarioId) {
-      console.error("No se encontró el usuarioId en el token");
-      return;
-    }
-
-    // Añadir usuarioId al objeto newClient
-    const clientData = { ...newClient, usuarioId };
-
     try {
-      const addedClient = await addClient(clientData); // Enviar datos con usuarioId
-      setClients([...clients, addedClient]); // Actualizar la lista de clientes
-      setNewClient({ nombre: "", rfc: "", correo: "", telefono: "", direccion: "" }); // Limpiar formulario
+      const decodedToken = JSON.parse(atob(token.split(".")[1] || ""));
+      const usuarioId = decodedToken?.id;
+      if (!usuarioId) throw new Error("No se encontró el usuarioId en el token");
+
+      const clientData = { ...newClient, usuarioId };
+      await addClient(clientData);
+      fetchClients();
+      setNewClient({ nombre: "", rfc: "", correo: "", telefono: "", direccion: "" });
     } catch (error) {
       console.error("Error al agregar cliente", error);
     }
@@ -77,23 +65,14 @@ const Clientes = () => {
 
   const handleEditClient = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingClient) return;
-
-    // Crear un objeto con los valores modificados, solo incluir los que están siendo cambiados
-    const updatedClientData = {
-      ClienteID: editingClient.ClienteID,
-      Nombre: editClientData.nombre,
-      RFC: editClientData.rfc,
-      Correo: editClientData.correo,
-      Telefono: editClientData.telefono,
-      Direccion: editClientData.direccion,
-    };
+    if (!editingClient?.ClienteID) return;
 
     try {
-      const updatedClient = await editClient(editingClient.ClienteID, updatedClientData); // Enviar los datos actualizados
-      setClients(clients.map(client => client.ClienteID === editingClient.ClienteID ? updatedClient : client)); // Actualizar la lista de clientes
-      setEditingClient(null); // Limpiar el estado de edición
-      setEditClientData({ nombre: "", rfc: "", correo: "", telefono: "", direccion: "" }); // Limpiar el formulario de edición
+      const updatedClientData = { ...editClientData, ClienteID: editingClient.ClienteID };
+      await editClient(editingClient.ClienteID, updatedClientData);
+      fetchClients();
+      setEditingClient(null);
+      setEditClientData({ nombre: "", rfc: "", correo: "", telefono: "", direccion: "" });
     } catch (error) {
       console.error("Error al editar cliente", error);
     }
@@ -102,7 +81,7 @@ const Clientes = () => {
   const handleDeleteClient = async (clientId: number) => {
     try {
       await deleteClient(clientId);
-      setClients(clients.filter(client => client.ClienteID !== clientId)); // Elimina el cliente de la lista
+      fetchClients();
     } catch (error) {
       console.error("Error al eliminar cliente", error);
     }
@@ -111,11 +90,11 @@ const Clientes = () => {
   const handleEditButtonClick = (client: Cliente) => {
     setEditingClient(client);
     setEditClientData({
-      nombre: client.Nombre,
-      rfc: client.RFC,
-      correo: client.Correo,
-      telefono: client.Telefono,
-      direccion: client.Direccion,
+      nombre: client.nombre,
+      rfc: client.rfc,
+      correo: client.correo,
+      telefono: client.telefono,
+      direccion: client.direccion,
     });
   };
 
@@ -124,113 +103,91 @@ const Clientes = () => {
       <h1 className="text-xl font-semibold mb-4">
         {userName ? `Bienvenido, ${userName}` : "Cargando..."}
       </h1>
-      
+
+      {/* Formulario de búsqueda */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          fetchClients();
+        }}
+        className="mb-4"
+      >
+        <input
+          type="text"
+          placeholder="Buscar por nombre o RFC"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="mb-2 p-2 border rounded w-full"
+        />
+      </form>
+
       {/* Formulario para agregar cliente */}
       {!editingClient && (
         <form onSubmit={handleAddClient} className="mb-4">
-          <input
-            type="text"
-            placeholder="Nombre"
-            value={newClient.nombre}
-            onChange={(e) => setNewClient({ ...newClient, nombre: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="RFC"
-            value={newClient.rfc}
-            onChange={(e) => setNewClient({ ...newClient, rfc: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="email"
-            placeholder="Correo"
-            value={newClient.correo}
-            onChange={(e) => setNewClient({ ...newClient, correo: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Teléfono"
-            value={newClient.telefono}
-            onChange={(e) => setNewClient({ ...newClient, telefono: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Dirección"
-            value={newClient.direccion}
-            onChange={(e) => setNewClient({ ...newClient, direccion: e.target.value })}
-            className="mb-4 p-2 border rounded"
-          />
-          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">
+          {Object.keys(newClient).map((field) => (
+            <input
+              key={field}
+              type={field === "correo" ? "email" : "text"}
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={newClient[field as keyof typeof newClient]}
+              onChange={(e) => setNewClient({ ...newClient, [field]: e.target.value })}
+              className="mb-2 p-2 border rounded w-full"
+            />
+          ))}
+          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded w-full">
             Agregar Cliente
           </button>
         </form>
       )}
 
-      {/* Formulario de edición (cuando un cliente está siendo editado) */}
+      {/* Formulario de edición */}
       {editingClient && (
         <form onSubmit={handleEditClient} className="mb-4">
-          <h2>Editar Cliente</h2>
-          <input
-            type="text"
-            placeholder="Nombre"
-            value={editClientData.nombre}
-            onChange={(e) => setEditClientData({ ...editClientData, nombre: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="RFC"
-            value={editClientData.rfc}
-            onChange={(e) => setEditClientData({ ...editClientData, rfc: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="email"
-            placeholder="Correo"
-            value={editClientData.correo}
-            onChange={(e) => setEditClientData({ ...editClientData, correo: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Teléfono"
-            value={editClientData.telefono}
-            onChange={(e) => setEditClientData({ ...editClientData, telefono: e.target.value })}
-            className="mb-2 p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Dirección"
-            value={editClientData.direccion}
-            onChange={(e) => setEditClientData({ ...editClientData, direccion: e.target.value })}
-            className="mb-4 p-2 border rounded"
-          />
-          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">
+          <h2 className="mb-2 text-lg font-bold">Editar Cliente</h2>
+          {Object.keys(editClientData).map((field) => (
+            <input
+              key={field}
+              type={field === "correo" ? "email" : "text"}
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={editClientData[field as keyof typeof editClientData]}
+              onChange={(e) => setEditClientData({ ...editClientData, [field]: e.target.value })}
+              className="mb-2 p-2 border rounded w-full"
+            />
+          ))}
+          <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded w-full">
             Guardar Cambios
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditingClient(null)}
+            className="mt-2 px-4 py-2 bg-gray-500 text-white rounded w-full"
+          >
+            Cancelar
           </button>
         </form>
       )}
 
       {/* Lista de clientes */}
-      <ul>
+      <ul className="mt-4">
         {clients.map((client) => (
-          <li key={client.ClienteID} className="mb-2">
-            {client.Nombre} - {client.RFC} - {client.Correo} - {client.Telefono} - {client.Direccion}
-            <button
-              onClick={() => handleEditButtonClick(client)} // Llamar la función para editar el cliente
-              className="ml-4 text-blue-500"
-            >
-              Editar
-            </button>
-            <button
-              onClick={() => handleDeleteClient(client.ClienteID)} // Llamar la función para eliminar el cliente
-              className="ml-2 text-red-500"
-            >
-              Eliminar
-            </button>
+          <li key={client.ClienteID} className="mb-2 p-2 border rounded flex justify-between items-center">
+            <span>
+              {client.nombre} - {client.rfc} - {client.correo} - {client.telefono} - {client.direccion}
+            </span>
+            <div>
+              <button
+                onClick={() => handleEditButtonClick(client)}
+                className="px-2 py-1 bg-yellow-500 text-white rounded mr-2"
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => handleDeleteClient(client.ClienteID)}
+                className="px-2 py-1 bg-red-500 text-white rounded"
+              >
+                Eliminar
+              </button>
+            </div>
           </li>
         ))}
       </ul>
