@@ -1,66 +1,76 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getUserName } from '../services/authService'; 
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { logoutUser, getUserName } from "@/app/services/authService";
 
-const ContadorDashboard = () => {
+export default function ContadorDashboard() {
   const router = useRouter();
-  const [userName, setUserName] = useState('');
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null); // Estado para almacenar el nombre del usuario
 
   useEffect(() => {
-    const storedUserName = getUserName(); // Recuperamos el nombre de usuario
-    if (storedUserName) {
-      setUserName(storedUserName);
-    } else {
-      router.push('/login'); // Si no hay usuario logueado, redirigimos al login
-    }
-  }, [router]); // Agregar router como dependencia
+    // Solo ejecutamos el acceso a localStorage en el cliente
+    const storedUserName = getUserName();
+    setUserName(storedUserName);
+  }, []); // Este efecto solo se ejecuta una vez, después de que el componente se monte
 
+  // Función para cerrar sesión
   const handleLogout = () => {
-    setShowLogoutModal(true);
+    logoutUser();
+    router.push("/login");
   };
 
-  const confirmarLogout = () => {
-    // Limpiamos el almacenamiento local o el contexto global (dependiendo de tu implementación)
-    localStorage.removeItem('userName');
-    router.push('/login');
-  };
-
-  const cancelarLogout = () => {
-    setShowLogoutModal(false);
-  };
+  if (!userName) {
+    return <div>Cargando...</div>; // Mostrar un mensaje o spinner mientras se carga el nombre
+  }
 
   return (
-    <div className="p-6 bg-gray-50">
-      {/* Encabezado */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">{`Bienvenido, ${userName || 'Cargando...'}`}</h2>
-        <button
-          onClick={handleLogout}
-          className="text-red-500 font-semibold hover:text-red-600 focus:ring-2 focus:ring-red-500"
-        >
-          Cerrar sesión
-        </button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6">
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-2xl text-center">
+        {/* Mensaje de bienvenida */}
+        <h1 className="text-2xl font-semibold text-gray-800">Bienvenido, {userName}</h1>
+
+        {/* Contenedor de botones */}
+        <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
+          <button
+            onClick={() => router.push("/Clientes")}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition w-full sm:w-auto"
+          >
+            Clientes
+          </button>
+          <button
+            onClick={() => router.push("/gestion-vencimientos")}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition w-full sm:w-auto"
+          >
+            Gestión de Vencimientos
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition w-full sm:w-auto"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
 
-      {/* Aquí puedes agregar más contenido para el contador */}
-      <div className="mb-6">
-        <h3 className="text-xl text-gray-700">Panel del Contador</h3>
-        {/* Otros componentes o información del contador */}
-      </div>
-
-      {/* Modal para confirmar cierre de sesión */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-600 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold">¿Estás seguro que deseas cerrar sesión?</h3>
-            <div className="flex justify-between mt-4">
-              <button onClick={cancelarLogout} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">
+      {/* Modal de confirmación */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-semibold">Confirmar cierre de sesión</h2>
+            <p className="mt-2 text-gray-600">¿Estás seguro de que quieres cerrar sesión?</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+              >
                 Cancelar
               </button>
-              <button onClick={confirmarLogout} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
-                Cerrar sesión
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                Cerrar Sesión
               </button>
             </div>
           </div>
@@ -68,6 +78,4 @@ const ContadorDashboard = () => {
       )}
     </div>
   );
-};
-
-export default ContadorDashboard;
+}
