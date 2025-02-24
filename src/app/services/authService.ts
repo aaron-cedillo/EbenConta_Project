@@ -1,13 +1,13 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3001/api/users"; // Asegúrate de que esta URL apunte correctamente al backend
+const API_URL = "http://localhost:3001/api/users"; 
 
-// Definir el tipo de respuesta para el login
+
 interface LoginResponse {
   token: string;
-  rol: "admin" | "contador"; // Asegúrate de que la API devuelva este valor
-  nombre: string; // El nombre del usuario
-  expirationDate?: string; // expirationDate solo para el rol 'contador', es opcional
+  rol: "admin" | "contador";
+  nombre: string; 
+  expirationDate?: string; 
 }
 
 // Iniciar sesión
@@ -25,6 +25,7 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
       if (typeof window !== "undefined") {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("nombre", response.data.nombre); // Guardar el nombre del usuario
+        localStorage.setItem("UsuarioID", response.data.usuarioID); // Guardar UsuarioID
 
         // Si el rol es 'contador', guardar la fecha de expiración
         if (response.data.rol === "contador" && response.data.expirationDate) {
@@ -93,6 +94,14 @@ export const getUser = () => {
 export const getUserName = () => {
   if (typeof window !== "undefined") { // Verificar que estamos en el cliente
     return localStorage.getItem("nombre");
+  }
+  return null; // Si estamos en el servidor, devolver null
+};
+
+// Obtener el UsuarioID desde localStorage
+export const getUserId = () => {
+  if (typeof window !== "undefined") { // Verificar que estamos en el cliente
+    return localStorage.getItem("UsuarioID");
   }
   return null; // Si estamos en el servidor, devolver null
 };

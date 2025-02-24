@@ -1,196 +1,350 @@
-"use client";
-import React, { useState, useEffect, useCallback } from "react";
-import { addClient, editClient, deleteClient, Cliente } from "../services/clienteService";
-import { getUserName } from "../services/authService";
+'use client';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { getUserName, getUserId } from '../services/authService'; 
+
+interface Cliente {
+  ClienteID: number;
+  Nombre: string;
+  RFC: string;
+  Correo: string;
+  Telefono: string;
+  Direccion: string;
+  UsuarioID: number;
+}
 
 const Clientes = () => {
-  const [clients, setClients] = useState<Cliente[]>([]);
-  const [newClient, setNewClient] = useState({
-    nombre: "",
-    rfc: "",
-    correo: "",
-    telefono: "",
-    direccion: "",
-  });
-  const [userName, setUserName] = useState<string | null>(null);
-  const [editingClient, setEditingClient] = useState<Cliente | null>(null);
-  const [editClientData, setEditClientData] = useState({
-    nombre: "",
-    rfc: "",
-    correo: "",
-    telefono: "",
-    direccion: "",
-  });
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const router = useRouter();
+  const [nombre, setNombre] = useState('');
+  const [rfc, setRfc] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [message, setMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]); 
+  const [editMode, setEditMode] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); 
+  const [userName, setUserName] = useState(''); 
+  const [showDeleteModal, setShowDeleteModal] = useState(false); 
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null); 
+  const [searchTerm, setSearchTerm] = useState(''); 
 
-  // Obtiene los clientes de la API con useCallback
-  const fetchClients = useCallback(async () => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/clientes${searchTerm ? `?search=${searchTerm}` : ""}`);
-      const data = await response.json();
-      setClients(data);
-    } catch (error) {
-      console.error("Error al obtener los clientes:", error);
-    }
-  }, [searchTerm]); // Dependencia corregida
-
-  // Ejecutar fetchClients cuando searchTerm cambie
   useEffect(() => {
-    fetchClients();
-    setUserName(getUserName()); // Obtiene el nombre del usuario
-  }, [fetchClients]); // Ahora fetchClients es estable y se incluye como dependencia
-
-  const handleAddClient = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("Usuario no autenticado");
-      return;
+    fetchClientes();
+    const storedUserName = getUserName();
+    if (storedUserName) {
+      setUserName(storedUserName);
     }
+  }, []);
 
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredClientes(clientes); 
+    } else {
+      setFilteredClientes(
+        clientes.filter(
+          (cliente) =>
+            cliente.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            cliente.RFC.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            cliente.Correo.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+  }, [searchTerm, clientes]);
+
+  const fetchClientes = async () => {
     try {
+      const response = await axios.get('http://localhost:3001/api/clientes');
+      setClientes(response.data);
+      setFilteredClientes(response.data); 
+    } catch (error) {
+      console.error('Error al obtener clientes:', error);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+  
+    try {
+      // Obtén el token y el UsuarioID desde el token
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuario no autenticado");
+        return;
+      }
+  
       const decodedToken = JSON.parse(atob(token.split(".")[1] || ""));
       const usuarioId = decodedToken?.id;
-      if (!usuarioId) throw new Error("No se encontró el usuarioId en el token");
-
-      const clientData = { ...newClient, usuarioId };
-      await addClient(clientData);
-      fetchClients();
-      setNewClient({ nombre: "", rfc: "", correo: "", telefono: "", direccion: "" });
-    } catch (error) {
-      console.error("Error al agregar cliente", error);
+      if (!usuarioId) throw new Error("No se encontró el UsuarioID en el token");
+  
+      // Crear el objeto newCliente con el UsuarioID
+      const newCliente = {
+        nombre,
+        rfc,
+        correo,
+        telefono,
+        direccion,
+        usuarioId, // Asegúrate de usar 'usuarioId' si es lo que el backend espera
+      };
+  
+      // Enviar el cliente al backend usando axios
+      await axios.post('http://localhost:3001/api/clientes', newCliente);
+      setMessage('Cliente registrado exitosamente');
+  
+      // Limpiar el formulario y actualizar la lista de clientes
+      resetForm();
+      fetchClientes();
+  
+    } catch (error: unknown) {
+      console.error('Error al registrar cliente:', error);
+      if (error instanceof Error) {
+        setErrorMessage(error.message || 'Error al procesar la solicitud');
+      } else {
+        setErrorMessage('Error desconocido al procesar la solicitud');
+      }
     }
   };
-
-  const handleEditClient = async (e: React.FormEvent) => {
+  
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingClient?.ClienteID) return;
-
+    setErrorMessage('');
     try {
-      const updatedClientData = { ...editClientData, ClienteID: editingClient.ClienteID };
-      await editClient(editingClient.ClienteID, updatedClientData);
-      fetchClients();
-      setEditingClient(null);
-      setEditClientData({ nombre: "", rfc: "", correo: "", telefono: "", direccion: "" });
+      const userId = getUserId(); // Obtén el UsuarioID
+
+      const updatedData = {
+        nombre,
+        rfc,
+        correo,
+        telefono,
+        direccion,
+        UsuarioID: userId, // Asocia el UsuarioID al cliente actualizado
+      };
+
+      if (selectedId !== null) {
+        // Actualizar cliente
+        await axios.put(`http://localhost:3001/api/clientes/${selectedId}`, updatedData); 
+        setMessage('Cliente actualizado exitosamente');
+      }
+
+      resetForm();
+      fetchClientes(); 
     } catch (error) {
-      console.error("Error al editar cliente", error);
+      console.error('Error al actualizar cliente:', error);
+      setErrorMessage('Error al procesar la solicitud');
     }
   };
 
-  const handleDeleteClient = async (clientId: number) => {
-    try {
-      await deleteClient(clientId);
-      fetchClients();
-    } catch (error) {
-      console.error("Error al eliminar cliente", error);
-    }
+  const handleEditClient = (cliente: Cliente) => {
+    setNombre(cliente.Nombre || '');
+    setRfc(cliente.RFC || '');
+    setCorreo(cliente.Correo || '');
+    setTelefono(cliente.Telefono || '');
+    setDireccion(cliente.Direccion || '');
+    setSelectedId(cliente.ClienteID);
+    setEditMode(true);
   };
 
-  const handleEditButtonClick = (client: Cliente) => {
-    setEditingClient(client);
-    setEditClientData({
-      nombre: client.nombre,
-      rfc: client.rfc,
-      correo: client.correo,
-      telefono: client.telefono,
-      direccion: client.direccion,
-    });
+  const resetForm = () => {
+    setNombre('');
+    setRfc('');
+    setCorreo('');
+    setTelefono('');
+    setDireccion('');
+    setEditMode(false);
+    setSelectedId(null);
+  };
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmarLogout = () => {
+    setShowLogoutModal(false);
+    router.push('/login');
+  };
+
+  const cancelarLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  const handleDeleteCliente = (cliente: Cliente) => {
+    setSelectedCliente(cliente);
+    setShowDeleteModal(true);
+  };
+
+  const confirmarEliminacion = () => {
+    if (selectedCliente) {
+      handleDelete(selectedCliente.ClienteID);
+    }
+    setShowDeleteModal(false);
+  };
+
+  const cancelarEliminacion = () => {
+    setShowDeleteModal(false);
+  };
+
+  const handleDelete = async (clienteId: number) => {
+    try {
+      await axios.delete(`http://localhost:3001/api/clientes/${clienteId}`); 
+      setMessage('Cliente eliminado exitosamente');
+      setClientes(clientes.filter((cliente) => cliente.ClienteID !== clienteId));
+      setFilteredClientes(filteredClientes.filter((cliente) => cliente.ClienteID !== clienteId)); 
+    } catch (error) {
+      console.error('Error al eliminar cliente:', error);
+      setErrorMessage('Error al eliminar cliente');
+    }
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        {userName ? `Bienvenido, ${userName}` : "Cargando..."}
-      </h1>
+    <div className="p-6 bg-gray-50">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800">{`Bienvenido, ${userName || 'Cargando...'}`}</h2>
+        <button
+          onClick={handleLogout}
+          className="text-red-500 font-semibold hover:text-red-600 focus:ring-2 focus:ring-red-500"
+        >
+          Cerrar sesión
+        </button>
+      </div>
 
-      {/* Formulario de búsqueda */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          fetchClients();
-        }}
-        className="mb-4"
-      >
-        <input
-          type="text"
-          placeholder="Buscar por nombre o RFC"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="mb-2 p-2 border rounded w-full"
-        />
-      </form>
-
-      {/* Formulario para agregar cliente */}
-      {!editingClient && (
-        <form onSubmit={handleAddClient} className="mb-4">
-          {Object.keys(newClient).map((field) => (
-            <input
-              key={field}
-              type={field === "correo" ? "email" : "text"}
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={newClient[field as keyof typeof newClient]}
-              onChange={(e) => setNewClient({ ...newClient, [field]: e.target.value })}
-              className="mb-2 p-2 border rounded w-full"
-            />
-          ))}
-          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded w-full">
-            Agregar Cliente
-          </button>
-        </form>
-      )}
-
-      {/* Formulario de edición */}
-      {editingClient && (
-        <form onSubmit={handleEditClient} className="mb-4">
-          <h2 className="mb-2 text-lg font-bold">Editar Cliente</h2>
-          {Object.keys(editClientData).map((field) => (
-            <input
-              key={field}
-              type={field === "correo" ? "email" : "text"}
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={editClientData[field as keyof typeof editClientData]}
-              onChange={(e) => setEditClientData({ ...editClientData, [field]: e.target.value })}
-              className="mb-2 p-2 border rounded w-full"
-            />
-          ))}
-          <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded w-full">
-            Guardar Cambios
-          </button>
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+        {editMode ? 'Editar Cliente' : 'Registrar Cliente'}
+      </h2>
+      <form onSubmit={editMode ? handleEdit : handleRegister} className="bg-white p-6 rounded-lg shadow-lg mb-8">
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Nombre</label>
+          <input
+            type="text"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">RFC</label>
+          <input
+            type="text"
+            value={rfc}
+            onChange={(e) => setRfc(e.target.value)}
+            required
+            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Correo</label>
+          <input
+            type="email"
+            value={correo}
+            onChange={(e) => setCorreo(e.target.value)}
+            required
+            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+          <input
+            type="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Dirección</label>
+          <input
+            type="text"
+            value={direccion}
+            onChange={(e) => setDireccion(e.target.value)}
+            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <button type="submit" className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 focus:ring-2 focus:ring-green-500">
+          {editMode ? 'Actualizar Cliente' : 'Registrar Cliente'}
+        </button>
+        {editMode && (
           <button
             type="button"
-            onClick={() => setEditingClient(null)}
-            className="mt-2 px-4 py-2 bg-gray-500 text-white rounded w-full"
+            onClick={resetForm}
+            className="w-full mt-2 bg-gray-400 text-white py-2 rounded-md hover:bg-gray-500 focus:ring-2 focus:ring-gray-400"
           >
-            Cancelar
+            Cancelar Edición
           </button>
-        </form>
+        )}
+      </form>
+
+      {message && <p className="text-center text-green-600 font-semibold">{message}</p>}
+      {errorMessage && <p className="text-center text-red-600 font-semibold">{errorMessage}</p>}
+
+      <div className="mb-6">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar cliente..."
+          className="p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      <h2 className="text-2xl font-semibold text-gray-800 mt-12 mb-6">Clientes Registrados</h2>
+      <table className="w-full table-auto border-collapse bg-white rounded-lg shadow-lg">
+        <thead>
+          <tr className="bg-gray-100 text-left text-sm font-semibold text-gray-700">
+            <th className="py-2 px-4">Nombre</th>
+            <th className="py-2 px-4">RFC</th>
+            <th className="py-2 px-4">Correo</th>
+            <th className="py-2 px-4">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredClientes.map((cliente) => (
+            <tr key={cliente.ClienteID} className="border-b">
+              <td className="py-2 px-4 text-sm">{cliente.Nombre}</td>
+              <td className="py-2 px-4 text-sm">{cliente.RFC}</td>
+              <td className="py-2 px-4 text-sm">{cliente.Correo}</td>
+              <td className="py-2 px-4 text-sm">
+                <button onClick={() => handleEditClient(cliente)} className="bg-orange-500 text-white py-1 px-3 rounded-md hover:bg-orange-600 focus:ring-2 focus:ring-orange-500 mr-2">
+                  Editar
+                </button>
+                <button onClick={() => handleDeleteCliente(cliente)} className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Modal de confirmación de cierre de sesión */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">¿Seguro que deseas cerrar sesión?</h3>
+            <div className="flex justify-end space-x-4">
+              <button onClick={cancelarLogout} className="px-4 py-2 bg-gray-400 text-white rounded-md">Cancelar</button>
+              <button onClick={confirmarLogout} className="px-4 py-2 bg-red-500 text-white rounded-md">Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Lista de clientes */}
-      <ul className="mt-4">
-        {clients.map((client) => (
-          <li key={client.ClienteID} className="mb-2 p-2 border rounded flex justify-between items-center">
-            <span>
-              {client.nombre} - {client.rfc} - {client.correo} - {client.telefono} - {client.direccion}
-            </span>
-            <div>
-              <button
-                onClick={() => handleEditButtonClick(client)}
-                className="px-2 py-1 bg-yellow-500 text-white rounded mr-2"
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => handleDeleteClient(client.ClienteID)}
-                className="px-2 py-1 bg-red-500 text-white rounded"
-              >
-                Eliminar
-              </button>
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && selectedCliente && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">¿Seguro que deseas eliminar este cliente?</h3>
+            <div className="flex justify-end space-x-4">
+              <button onClick={cancelarEliminacion} className="px-4 py-2 bg-gray-400 text-white rounded-md">Cancelar</button>
+              <button onClick={confirmarEliminacion} className="px-4 py-2 bg-red-500 text-white rounded-md">Eliminar</button>
             </div>
-          </li>
-        ))}
-      </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
