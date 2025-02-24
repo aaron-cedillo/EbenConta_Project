@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { getUserName, getUserId } from '../services/authService'; 
+import { getUserName, getUserId } from '../services/authService';
 
 interface Cliente {
   ClienteID: number;
@@ -71,7 +71,6 @@ const Clientes = () => {
     setErrorMessage('');
   
     try {
-      // Obtén el token y el UsuarioID desde el token
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("Usuario no autenticado");
@@ -82,21 +81,18 @@ const Clientes = () => {
       const usuarioId = decodedToken?.id;
       if (!usuarioId) throw new Error("No se encontró el UsuarioID en el token");
   
-      // Crear el objeto newCliente con el UsuarioID
       const newCliente = {
         nombre,
         rfc,
         correo,
         telefono,
         direccion,
-        usuarioId, // Asegúrate de usar 'usuarioId' si es lo que el backend espera
+        usuarioId,
       };
   
-      // Enviar el cliente al backend usando axios
       await axios.post('http://localhost:3001/api/clientes', newCliente);
       setMessage('Cliente registrado exitosamente');
   
-      // Limpiar el formulario y actualizar la lista de clientes
       resetForm();
       fetchClientes();
   
@@ -109,12 +105,12 @@ const Clientes = () => {
       }
     }
   };
-  
+
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     try {
-      const userId = getUserId(); // Obtén el UsuarioID
+      const userId = getUserId();
 
       const updatedData = {
         nombre,
@@ -122,11 +118,10 @@ const Clientes = () => {
         correo,
         telefono,
         direccion,
-        UsuarioID: userId, // Asocia el UsuarioID al cliente actualizado
+        UsuarioID: userId,
       };
 
       if (selectedId !== null) {
-        // Actualizar cliente
         await axios.put(`http://localhost:3001/api/clientes/${selectedId}`, updatedData); 
         setMessage('Cliente actualizado exitosamente');
       }
@@ -211,6 +206,13 @@ const Clientes = () => {
           Cerrar sesión
         </button>
       </div>
+
+      <button 
+        onClick={() => router.push('/ContadorDashboard')} 
+        className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mb-4"
+      >
+        Volver
+      </button>
 
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">
         {editMode ? 'Editar Cliente' : 'Registrar Cliente'}
