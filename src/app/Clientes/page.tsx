@@ -24,14 +24,14 @@ const Clientes = () => {
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]); 
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false); 
-  const [userName, setUserName] = useState(''); 
-  const [showDeleteModal, setShowDeleteModal] = useState(false); 
-  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null); 
-  const [searchTerm, setSearchTerm] = useState(''); 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchClientes();
@@ -43,7 +43,7 @@ const Clientes = () => {
 
   useEffect(() => {
     if (searchTerm.trim() === '') {
-      setFilteredClientes(clientes); 
+      setFilteredClientes(clientes);
     } else {
       setFilteredClientes(
         clientes.filter(
@@ -71,7 +71,7 @@ const Clientes = () => {
         },
       });
       setClientes(response.data);
-      setFilteredClientes(response.data); 
+      setFilteredClientes(response.data);
     } catch (error) {
       console.error('Error al obtener clientes:', error);
     }
@@ -80,18 +80,18 @@ const Clientes = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-  
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("Usuario no autenticado");
         return;
       }
-  
+
       const decodedToken = JSON.parse(atob(token.split(".")[1] || ""));
       const usuarioId = decodedToken?.id;
       if (!usuarioId) throw new Error("No se encontró el UsuarioID en el token");
-  
+
       const newCliente = {
         nombre,
         rfc,
@@ -100,17 +100,17 @@ const Clientes = () => {
         direccion,
         usuarioId,
       };
-  
+
       await axios.post('http://localhost:3001/api/clientes', newCliente, {
         headers: {
           Authorization: `Bearer ${token}`,  // Aquí se envía el token
         },
       });
       setMessage('Cliente registrado exitosamente');
-  
+
       resetForm();
       fetchClientes();
-  
+
     } catch (error: unknown) {
       console.error('Error al registrar cliente:', error);
       if (error instanceof Error) {
@@ -151,7 +151,7 @@ const Clientes = () => {
       }
 
       resetForm();
-      fetchClientes(); 
+      fetchClientes();
     } catch (error) {
       console.error('Error al actualizar cliente:', error);
       setErrorMessage('Error al procesar la solicitud');
@@ -219,10 +219,10 @@ const Clientes = () => {
         headers: {
           Authorization: `Bearer ${token}`,  // Aquí se envía el token
         },
-      }); 
+      });
       setMessage('Cliente eliminado exitosamente');
       setClientes(clientes.filter((cliente) => cliente.ClienteID !== clienteId));
-      setFilteredClientes(filteredClientes.filter((cliente) => cliente.ClienteID !== clienteId)); 
+      setFilteredClientes(filteredClientes.filter((cliente) => cliente.ClienteID !== clienteId));
     } catch (error) {
       console.error('Error al eliminar cliente:', error);
       setErrorMessage('Error al eliminar cliente');
@@ -241,8 +241,8 @@ const Clientes = () => {
         </button>
       </div>
 
-      <button 
-        onClick={() => router.push('/ContadorDashboard')} 
+      <button
+        onClick={() => router.push('/ContadorDashboard')}
         className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mb-4"
       >
         Volver
@@ -348,6 +348,12 @@ const Clientes = () => {
                 </div>
                 <div>
                   <button
+                    onClick={() => router.push(`/ClienteDashboard/${cliente.ClienteID}`)}
+                    className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mr-2"
+                  >
+                    Ver Cliente
+                  </button>
+                  <button
                     onClick={() => handleEditClient(cliente)}
                     className="bg-indigo-500 text-white py-1 px-3 rounded-md hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-500"
                   >
@@ -355,7 +361,7 @@ const Clientes = () => {
                   </button>
                   <button
                     onClick={() => handleDeleteCliente(cliente)}
-                    className="ml-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500"
+                    className="ml-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500 mr-2"
                   >
                     Eliminar
                   </button>
