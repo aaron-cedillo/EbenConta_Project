@@ -58,7 +58,18 @@ const Clientes = () => {
 
   const fetchClientes = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/clientes');
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuario no autenticado");
+        return;
+      }
+
+      // Incluimos el token en los encabezados de la solicitud
+      const response = await axios.get('http://localhost:3001/api/clientes', {
+        headers: {
+          Authorization: `Bearer ${token}`,  // Aquí se envía el token
+        },
+      });
       setClientes(response.data);
       setFilteredClientes(response.data); 
     } catch (error) {
@@ -90,7 +101,11 @@ const Clientes = () => {
         usuarioId,
       };
   
-      await axios.post('http://localhost:3001/api/clientes', newCliente);
+      await axios.post('http://localhost:3001/api/clientes', newCliente, {
+        headers: {
+          Authorization: `Bearer ${token}`,  // Aquí se envía el token
+        },
+      });
       setMessage('Cliente registrado exitosamente');
   
       resetForm();
@@ -110,8 +125,13 @@ const Clientes = () => {
     e.preventDefault();
     setErrorMessage('');
     try {
-      const userId = getUserId();
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuario no autenticado");
+        return;
+      }
 
+      const userId = getUserId();
       const updatedData = {
         nombre,
         rfc,
@@ -122,7 +142,11 @@ const Clientes = () => {
       };
 
       if (selectedId !== null) {
-        await axios.put(`http://localhost:3001/api/clientes/${selectedId}`, updatedData); 
+        await axios.put(`http://localhost:3001/api/clientes/${selectedId}`, updatedData, {
+          headers: {
+            Authorization: `Bearer ${token}`,  // Aquí se envía el token
+          },
+        });
         setMessage('Cliente actualizado exitosamente');
       }
 
@@ -185,7 +209,17 @@ const Clientes = () => {
 
   const handleDelete = async (clienteId: number) => {
     try {
-      await axios.delete(`http://localhost:3001/api/clientes/${clienteId}`); 
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuario no autenticado");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3001/api/clientes/${clienteId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,  // Aquí se envía el token
+        },
+      }); 
       setMessage('Cliente eliminado exitosamente');
       setClientes(clientes.filter((cliente) => cliente.ClienteID !== clienteId));
       setFilteredClientes(filteredClientes.filter((cliente) => cliente.ClienteID !== clienteId)); 
@@ -263,86 +297,114 @@ const Clientes = () => {
             type="text"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
+            required
             className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-        <button type="submit" className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 focus:ring-2 focus:ring-green-500">
-          {editMode ? 'Actualizar Cliente' : 'Registrar Cliente'}
-        </button>
-        {editMode && (
+        <div className="flex justify-between items-center">
           <button
-            type="button"
-            onClick={resetForm}
-            className="w-full mt-2 bg-gray-400 text-white py-2 rounded-md hover:bg-gray-500 focus:ring-2 focus:ring-gray-400"
+            type="submit"
+            className="bg-indigo-500 text-white py-2 px-6 rounded-md hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-500"
           >
-            Cancelar Edición
+            {editMode ? 'Actualizar Cliente' : 'Registrar Cliente'}
           </button>
-        )}
+          {editMode && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="text-red-500 hover:text-red-600"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
       </form>
 
-      {message && <p className="text-center text-green-600 font-semibold">{message}</p>}
-      {errorMessage && <p className="text-center text-red-600 font-semibold">{errorMessage}</p>}
+      {message && (
+        <div className="mb-4 text-green-500">{message}</div>
+      )}
+      {errorMessage && (
+        <div className="mb-4 text-red-500">{errorMessage}</div>
+      )}
 
-      <div className="mb-6">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar cliente..."
-          className="p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-        />
+      <input
+        type="text"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Buscar cliente"
+        className="w-full mb-6 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+      />
+
+      <div className="space-y-4">
+        {filteredClientes.length === 0 ? (
+          <p>No se encontraron clientes.</p>
+        ) : (
+          filteredClientes.map(cliente => (
+            <div key={cliente.ClienteID} className="border p-4 rounded-md shadow-sm">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold">{cliente.Nombre}</h3>
+                  <p className="text-sm text-gray-500">{cliente.RFC}</p>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleEditClient(cliente)}
+                    className="bg-indigo-500 text-white py-1 px-3 rounded-md hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-500"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCliente(cliente)}
+                    className="ml-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      <h2 className="text-2xl font-semibold text-gray-800 mt-12 mb-6">Clientes Registrados</h2>
-      <table className="w-full table-auto border-collapse bg-white rounded-lg shadow-lg">
-        <thead>
-          <tr className="bg-gray-100 text-left text-sm font-semibold text-gray-700">
-            <th className="py-2 px-4">Nombre</th>
-            <th className="py-2 px-4">RFC</th>
-            <th className="py-2 px-4">Correo</th>
-            <th className="py-2 px-4">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredClientes.map((cliente) => (
-            <tr key={cliente.ClienteID} className="border-b">
-              <td className="py-2 px-4 text-sm">{cliente.Nombre}</td>
-              <td className="py-2 px-4 text-sm">{cliente.RFC}</td>
-              <td className="py-2 px-4 text-sm">{cliente.Correo}</td>
-              <td className="py-2 px-4 text-sm">
-                <button onClick={() => handleEditClient(cliente)} className="bg-orange-500 text-white py-1 px-3 rounded-md hover:bg-orange-600 focus:ring-2 focus:ring-orange-500 mr-2">
-                  Editar
-                </button>
-                <button onClick={() => handleDeleteCliente(cliente)} className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500">
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Modal de confirmación de cierre de sesión */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">¿Seguro que deseas cerrar sesión?</h3>
-            <div className="flex justify-end space-x-4">
-              <button onClick={cancelarLogout} className="px-4 py-2 bg-gray-400 text-white rounded-md">Cancelar</button>
-              <button onClick={confirmarLogout} className="px-4 py-2 bg-red-500 text-white rounded-md">Cerrar sesión</button>
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <p>¿Estás seguro de que deseas cerrar sesión?</p>
+            <div className="mt-4 flex justify-end space-x-4">
+              <button
+                onClick={cancelarLogout}
+                className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarLogout}
+                className="bg-red-500 text-white py-2 px-4 rounded-md"
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de confirmación de eliminación */}
-      {showDeleteModal && selectedCliente && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">¿Seguro que deseas eliminar este cliente?</h3>
-            <div className="flex justify-end space-x-4">
-              <button onClick={cancelarEliminacion} className="px-4 py-2 bg-gray-400 text-white rounded-md">Cancelar</button>
-              <button onClick={confirmarEliminacion} className="px-4 py-2 bg-red-500 text-white rounded-md">Eliminar</button>
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <p>¿Estás seguro de que deseas eliminar este cliente?</p>
+            <div className="mt-4 flex justify-end space-x-4">
+              <button
+                onClick={cancelarEliminacion}
+                className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEliminacion}
+                className="bg-red-500 text-white py-2 px-4 rounded-md"
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         </div>
