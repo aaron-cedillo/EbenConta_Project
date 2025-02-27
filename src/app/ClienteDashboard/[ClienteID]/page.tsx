@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import axios from 'axios';
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import axios from "axios";
 
 interface Cliente {
   Nombre: string;
@@ -24,12 +24,19 @@ interface Factura {
 
 const ClienteDashboard = () => {
   const router = useRouter();
-  const { ClienteID } = useParams();
+  const params = useParams();
+  const ClienteID = params.ClienteID as string | undefined;
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [facturas, setFacturas] = useState<Factura[]>([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [xmlFile, setXmlFile] = useState<File | null>(null);
 
   const fetchCliente = useCallback(async () => {
+    if (!ClienteID) {
+      setError("No se encontró el ID del cliente.");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -44,12 +51,14 @@ const ClienteDashboard = () => {
 
       setCliente(response.data);
     } catch (err) {
-      console.error('Error al obtener los datos del cliente:', err);
-      setError('No se pudo cargar la información del cliente.');
+      console.error("Error al obtener los datos del cliente:", err);
+      setError("No se pudo cargar la información del cliente.");
     }
   }, [ClienteID]);
 
   const fetchFacturas = useCallback(async () => {
+    if (!ClienteID) return;
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -64,8 +73,8 @@ const ClienteDashboard = () => {
 
       setFacturas(response.data);
     } catch (err) {
-      console.error('Error al obtener las facturas:', err);
-      setError('No se pudieron cargar las facturas.');
+      console.error("Error al obtener las facturas:", err);
+      setError("No se pudieron cargar las facturas.");
     }
   }, [ClienteID]);
 
@@ -74,10 +83,51 @@ const ClienteDashboard = () => {
     fetchFacturas();
   }, [fetchCliente, fetchFacturas]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setXmlFile(e.target.files[0]);
+    }
+  };
+
+  const handleUploadFactura = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!ClienteID) {
+      alert("No se encontró el ID del cliente.");
+      return;
+    }
+
+    if (!xmlFile) {
+      alert("Selecciona un archivo XML.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("ClienteID", ClienteID);
+    formData.append("xml", xmlFile);
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post("http://localhost:3001/api/facturas/subir", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      alert("Factura subida exitosamente.");
+      setXmlFile(null);
+      fetchFacturas();
+    } catch (err) {
+      console.error("Error al subir la factura:", err);
+      alert("Error al subir la factura.");
+    }
+  };
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
       <button
-        onClick={() => router.push('/Clientes')}
+        onClick={() => router.push("/Clientes")}
         className="mb-6 bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition"
       >
         ← Volver
@@ -118,7 +168,16 @@ const ClienteDashboard = () => {
         <p className="text-gray-600">Cargando información...</p>
       )}
 
-      {/* Sección de Facturas */}
+      <div className="w-full max-w-lg bg-white p-6 shadow-md rounded-lg mb-8">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">Subir Factura (XML)</h3>
+        <form onSubmit={handleUploadFactura} className="space-y-4">
+          <input type="file" accept=".xml" onChange={handleFileChange} className="w-full p-2 border rounded" required />
+          <button type="submit" className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 transition">
+            Subir Factura
+          </button>
+        </form>
+      </div>
+
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Facturas del Cliente</h2>
 
       {facturas.length > 0 ? (
@@ -139,29 +198,15 @@ const ClienteDashboard = () => {
                   <td className="p-3">{factura.UUID}</td>
                   <td className="p-3">{new Date(factura.FechaEmision).toLocaleDateString()}</td>
                   <td className="p-3">${factura.Total.toFixed(2)}</td>
-                  <td className={`p-3 font-semibold ${factura.Estatus === 'Cancelada' ? 'text-red-500' : 'text-green-600'}`}>
+                  <td className={`p-3 font-semibold ${factura.Estatus === "Cancelada" ? "text-red-500" : "text-green-600"}`}>
                     {factura.Estatus}
-                  </td>
-                  <td className="p-3 flex space-x-2">
-                    {factura.EnlacePDF && (
-                      <a href={factura.EnlacePDF} target="_blank" className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition">
-                        PDF
-                      </a>
-                    )}
-                    {factura.EnlaceXML && (
-                      <a href={factura.EnlaceXML} target="_blank" className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition">
-                        XML
-                      </a>
-                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      ) : (
-        <p className="text-gray-600">Este cliente no tiene facturas registradas.</p>
-      )}
+      ) : <p className="text-gray-600">Este cliente no tiene facturas registradas.</p>}
     </div>
   );
 };
