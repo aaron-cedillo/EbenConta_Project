@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
+import { AxiosError } from 'axios';
 
 interface Cliente {
   Nombre: string;
@@ -90,39 +91,45 @@ const ClienteDashboard = () => {
   };
 
   const handleUploadFactura = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!ClienteID) {
+  if (!ClienteID) {
       alert("No se encontró el ID del cliente.");
       return;
-    }
+  }
 
-    if (!xmlFile) {
+  if (!xmlFile) {
       alert("Selecciona un archivo XML.");
       return;
-    }
+  }
 
-    const formData = new FormData();
-    formData.append("ClienteID", ClienteID);
-    formData.append("xml", xmlFile);
+  const formData = new FormData();
+  formData.append("xml", xmlFile);
+  formData.append("ClienteID", ClienteID);  // Asegurar que se envía el ClienteID
 
-    try {
+  try {
       const token = localStorage.getItem("token");
       await axios.post("http://localhost:3001/api/facturas/subir", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+          headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+          },
       });
 
       alert("Factura subida exitosamente.");
       setXmlFile(null);
       fetchFacturas();
-    } catch (err) {
-      console.error("Error al subir la factura:", err);
-      alert("Error al subir la factura.");
-    }
-  };
+  } catch (err: unknown) {
+      // Aseguramos que err sea de tipo AxiosError
+      if (err instanceof AxiosError) {
+          console.error("Error al subir la factura:", err.response?.data || err);
+          alert("Error al subir la factura: " + (err.response?.data?.error || "Desconocido"));
+      } else {
+          console.error("Error desconocido:", err);
+          alert("Error desconocido al subir la factura.");
+      }
+  }
+};
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
