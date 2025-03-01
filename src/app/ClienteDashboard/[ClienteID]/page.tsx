@@ -20,6 +20,9 @@ interface Factura {
   Total: number;
   Estatus: string;
   Tipo: string;
+  RFCEmisor: string;
+  RFCReceptor: string;
+  Folio: string;
   EnlacePDF: string | null;
   EnlaceXML: string | null;
 }
@@ -80,11 +83,6 @@ const ClienteDashboard = () => {
     }
   }, [ClienteID]);
 
-  useEffect(() => {
-    fetchCliente();
-    fetchFacturas();
-  }, [fetchCliente, fetchFacturas]);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setXmlFile(e.target.files[0]);
@@ -92,45 +90,84 @@ const ClienteDashboard = () => {
   };
 
   const handleUploadFactura = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!ClienteID) {
+    if (!ClienteID) {
       alert("No se encontró el ID del cliente.");
       return;
-  }
+    }
 
-  if (!xmlFile) {
+    if (!xmlFile) {
       alert("Selecciona un archivo XML.");
       return;
-  }
+    }
 
-  const formData = new FormData();
-  formData.append("xml", xmlFile);
-  formData.append("ClienteID", ClienteID);  // Asegurar que se envía el ClienteID
+    const formData = new FormData();
+    formData.append("xml", xmlFile);
+    formData.append("ClienteID", ClienteID);  // Asegurar que se envía el ClienteID
 
-  try {
+    try {
       const token = localStorage.getItem("token");
       await axios.post("http://localhost:3001/api/facturas/subir", formData, {
-          headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-          },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       alert("Factura subida exitosamente.");
       setXmlFile(null);
       fetchFacturas();
-  } catch (err: unknown) {
-      // Aseguramos que err sea de tipo AxiosError
+    } catch (err: unknown) {
       if (err instanceof AxiosError) {
-          console.error("Error al subir la factura:", err.response?.data || err);
-          alert("Error al subir la factura: " + (err.response?.data?.error || "Desconocido"));
+        console.error("Error al subir la factura:", err.response?.data || err);
+        alert("Error al subir la factura: " + (err.response?.data?.error || "Desconocido"));
       } else {
-          console.error("Error desconocido:", err);
-          alert("Error desconocido al subir la factura.");
+        console.error("Error desconocido:", err);
+        alert("Error desconocido al subir la factura.");
       }
-  }
-};
+    }
+  };
+
+  const handleEstatusChange = async (facturaID: number, nuevoEstatus: string) => {
+    if (!nuevoEstatus) {
+      alert("El estatus no es válido.");
+      return;
+    }
+
+    console.log("Enviando estatus:", nuevoEstatus);  // Verifica el valor de nuevoEstatus
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuario no autenticado");
+        return;
+      }
+
+      // Asegúrate de que el cuerpo de la solicitud sea correcto
+      await axios.put(
+        `http://localhost:3001/api/facturas/${facturaID}`,
+        { Estatus: nuevoEstatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Actualizar la lista de facturas después de la actualización
+      fetchFacturas();
+      alert("Estatus actualizado correctamente.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Error al actualizar el estatus:", err.message);
+      } else {
+        console.error("Error desconocido:", err);
+      }
+      alert("Error al actualizar el estatus.");
+    }
+  };
+  
+  useEffect(() => {
+    fetchCliente();
+    fetchFacturas();
+  }, [fetchCliente, fetchFacturas]);
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
@@ -193,28 +230,49 @@ const ClienteDashboard = () => {
           <table className="w-full border-collapse">
             <thead className="bg-blue-500 text-white">
               <tr>
-                <th className="p-3 text-left">UUID</th>
-                <th className="p-3 text-left">Fecha</th>
+                <th className="p-3 text-left">RFC Emisor</th>
+                <th className="p-3 text-left">RFC Receptor</th>
                 <th className="p-3 text-left">Total</th>
+                <th className="p-3 text-left">Tipo</th>
+                <th className="p-3 text-left">UUID</th>
+                <th className="p-3 text-left">Fecha Emisión</th>
+                <th className="p-3 text-left">Folio</th>
                 <th className="p-3 text-left">Estatus</th>
-                <th className="p-3 text-left">Acciones</th>
+                <th className="p-3 text-left">Acción</th>
               </tr>
             </thead>
             <tbody>
               {facturas.map((factura) => (
                 <tr key={factura.FacturaID} className="border-t">
+                  <td className="p-3">{factura.RFCEmisor}</td>
+                  <td className="p-3">{factura.RFCReceptor}</td>
+                  <td className="p-3">${factura.Total.toFixed(2)}</td>
+                  <td className="p-3">{factura.Tipo}</td>
                   <td className="p-3">{factura.UUID}</td>
                   <td className="p-3">{new Date(factura.FechaEmision).toLocaleDateString()}</td>
-                  <td className="p-3">${factura.Total.toFixed(2)}</td>
+                  <td className="p-3">{factura.Folio}</td>
                   <td className={`p-3 font-semibold ${factura.Estatus === "Cancelada" ? "text-red-500" : "text-green-600"}`}>
                     {factura.Estatus}
+                  </td>
+                  <td className="p-3">
+                    <select
+                      value={factura.Estatus}
+                      onChange={(e) => handleEstatusChange(factura.FacturaID, e.target.value)}
+                      className="border p-2 rounded"
+                    >
+                      <option value="Activa">Activa</option>
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Cancelada">Cancelada</option>
+                    </select>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      ) : <p className="text-gray-600">Este cliente no tiene facturas registradas.</p>}
+      ) : (
+        <p className="text-gray-600">Este cliente no tiene facturas registradas.</p>
+      )}
     </div>
   );
 };
