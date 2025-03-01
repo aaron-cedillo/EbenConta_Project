@@ -35,6 +35,11 @@ const ClienteDashboard = () => {
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [error, setError] = useState("");
   const [xmlFile, setXmlFile] = useState<File | null>(null);
+  
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [facturaIDToChange, setFacturaIDToChange] = useState<number | null>(null);
+  const [nuevoEstatus, setNuevoEstatus] = useState<string>("");
 
   const fetchCliente = useCallback(async () => {
     if (!ClienteID) {
@@ -130,12 +135,13 @@ const ClienteDashboard = () => {
   };
 
   const handleEstatusChange = async (facturaID: number, nuevoEstatus: string) => {
-    if (!nuevoEstatus) {
-      alert("El estatus no es válido.");
-      return;
-    }
+    setFacturaIDToChange(facturaID);
+    setNuevoEstatus(nuevoEstatus);
+    setShowModal(true); // Mostrar el modal de confirmación
+  };
 
-    console.log("Enviando estatus:", nuevoEstatus);  // Verifica el valor de nuevoEstatus
+  const confirmEstatusChange = async () => {
+    if (!facturaIDToChange || !nuevoEstatus) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -144,9 +150,8 @@ const ClienteDashboard = () => {
         return;
       }
 
-      // Asegúrate de que el cuerpo de la solicitud sea correcto
       await axios.put(
-        `http://localhost:3001/api/facturas/${facturaID}`,
+        `http://localhost:3001/api/facturas/${facturaIDToChange}`,
         { Estatus: nuevoEstatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -162,8 +167,14 @@ const ClienteDashboard = () => {
       }
       alert("Error al actualizar el estatus.");
     }
+
+    setShowModal(false); // Cerrar el modal después de confirmar
   };
-  
+
+  const cancelEstatusChange = () => {
+    setShowModal(false); // Cerrar el modal sin realizar cambios
+  };
+
   useEffect(() => {
     fetchCliente();
     fetchFacturas();
@@ -272,6 +283,29 @@ const ClienteDashboard = () => {
         </div>
       ) : (
         <p className="text-gray-600">Este cliente no tiene facturas registradas.</p>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-md w-1/3">
+            <h3 className="text-xl font-semibold mb-4">Confirmar cambio de estatus</h3>
+            <p>¿Estás seguro de cambiar el estatus de esta factura?</p>
+            <div className="flex justify-between mt-6">
+              <button
+                onClick={confirmEstatusChange}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+              >
+                Sí, cambiar
+              </button>
+              <button
+                onClick={cancelEstatusChange}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+              >
+                No, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
