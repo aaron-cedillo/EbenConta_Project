@@ -19,6 +19,7 @@ interface Factura {
   FechaEmision: string;
   Total: number;
   Estatus: string;
+  Tipo: string;
   EnlacePDF: string | null;
   EnlaceXML: string | null;
 }
