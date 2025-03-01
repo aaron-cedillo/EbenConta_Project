@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { AxiosError } from 'axios';
+import { logoutUser, getUserName } from "@/app/services/authService";
 
 interface Cliente {
   Nombre: string;
@@ -30,16 +31,19 @@ interface Factura {
 const ClienteDashboard = () => {
   const router = useRouter();
   const params = useParams();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const ClienteID = params.ClienteID as string | undefined;
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [error, setError] = useState("");
   const [xmlFile, setXmlFile] = useState<File | null>(null);
-  
+  const [userName, setUserName] = useState<string | null>(null); // Estado para almacenar el nombre del usuario
+
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [facturaIDToChange, setFacturaIDToChange] = useState<number | null>(null);
   const [nuevoEstatus, setNuevoEstatus] = useState<string>("");
+
 
   const fetchCliente = useCallback(async () => {
     if (!ClienteID) {
@@ -175,19 +179,63 @@ const ClienteDashboard = () => {
     setShowModal(false); // Cerrar el modal sin realizar cambios
   };
 
+  const handleLogout = () => {
+    logoutUser();
+    router.push("/login");
+  };
+
   useEffect(() => {
+    const storedUserName = getUserName();
+    setUserName(storedUserName);
     fetchCliente();
     fetchFacturas();
   }, [fetchCliente, fetchFacturas]);
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
+      {/* Mensaje de bienvenida y botón de cerrar sesión en la misma línea */}
+      <div className="flex items-center justify-between w-full mb-6">
+        <h1 className="text-2xl font-semibold text-gray-800">Bienvenido, {userName}</h1>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition sm:w-auto"
+        >
+          Cerrar Sesión
+        </button>
+      </div>
+
+      {/* Modal de confirmación */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-semibold">Confirmar cierre de sesión</h2>
+            <p className="mt-2 text-gray-600">¿Estás seguro de que quieres cerrar sesión?</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Botón de Volver */}
       <button
-        onClick={() => router.push("/Clientes")}
+        onClick={() => router.push('/Clientes')}
         className="mb-6 bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition"
       >
-        ← Volver
+        Volver
       </button>
+
 
       <h2 className="text-3xl font-bold text-gray-800 mb-6">Información del Cliente</h2>
 
