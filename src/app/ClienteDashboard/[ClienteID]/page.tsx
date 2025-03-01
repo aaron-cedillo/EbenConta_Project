@@ -41,8 +41,8 @@ const ClienteDashboard = () => {
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
-  const [facturaIDToChange, setFacturaIDToChange] = useState<number | null>(null);
   const [nuevoEstatus, setNuevoEstatus] = useState<string>("");
+  const [FacturaID, setFacturaID] = useState<number | null>(null); // Utilizamos directamente FacturaID
 
 
   const fetchCliente = useCallback(async () => {
@@ -139,28 +139,27 @@ const ClienteDashboard = () => {
   };
 
   const handleEstatusChange = async (facturaID: number, nuevoEstatus: string) => {
-    setFacturaIDToChange(facturaID);
-    setNuevoEstatus(nuevoEstatus);
-    setShowModal(true); // Mostrar el modal de confirmación
-  };
+    setFacturaID(facturaID); // Asignamos el ID de la factura directamente
+    setNuevoEstatus(nuevoEstatus); // Asignamos el nuevo estatus seleccionado
+    setShowModal(true); // Mostramos el modal de confirmación
+  };  
 
   const confirmEstatusChange = async () => {
-    if (!facturaIDToChange || !nuevoEstatus) return;
-
+    if (!FacturaID || !nuevoEstatus) return; // Validamos que tenemos el ID y el nuevo estatus
+  
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("Usuario no autenticado");
         return;
       }
-
+  
       await axios.put(
-        `http://localhost:3001/api/facturas/${facturaIDToChange}`,
-        { Estatus: nuevoEstatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:3001/api/facturas/${FacturaID}`, // Usamos FacturaID directamente
+        { Estatus: nuevoEstatus }
       );
-
-      // Actualizar la lista de facturas después de la actualización
+  
+      // Actualizamos la lista de facturas después de la actualización
       fetchFacturas();
       alert("Estatus actualizado correctamente.");
     } catch (err: unknown) {
@@ -171,9 +170,10 @@ const ClienteDashboard = () => {
       }
       alert("Error al actualizar el estatus.");
     }
-
+  
     setShowModal(false); // Cerrar el modal después de confirmar
   };
+  
 
   const cancelEstatusChange = () => {
     setShowModal(false); // Cerrar el modal sin realizar cambios
