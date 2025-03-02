@@ -146,6 +146,7 @@ const ClienteDashboard = () => {
   };  
 
   const confirmEstatusChange = async () => {
+    console.log("FacturaID:", FacturaID, "Nuevo Estatus:", nuevoEstatus);  // Verificar que los datos son correctos
     if (!FacturaID || !nuevoEstatus) return; // Validamos que tenemos el ID y el nuevo estatus
   
     try {
@@ -176,7 +177,6 @@ const ClienteDashboard = () => {
     setShowModal(false); // Cerrar el modal después de confirmar
   };
   
-
   const cancelEstatusChange = () => {
     setShowModal(false); // Cerrar el modal sin realizar cambios
   };

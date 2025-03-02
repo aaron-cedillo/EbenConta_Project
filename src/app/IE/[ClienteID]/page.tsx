@@ -3,10 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { getUserName, getUserId } from '../../services/authService'; // Asegúrate de que getUserId esté disponible.
+import * as XLSX from 'xlsx';  // Importamos la librería XLSX
 
 interface FacturaResumen {
-  fecha: string;
-  tipo: 'Ingreso' | 'Egreso';
+  tipo: 'I' | 'E';
   monto: number;
 }
 
@@ -15,8 +15,6 @@ const IE = () => {
   const [userName, setUserName] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [facturas, setFacturas] = useState<FacturaResumen[]>([]);
-  const [mes, setMes] = useState<number>(new Date().getMonth() + 1); // Mes actual
-  const [año, setAño] = useState<number>(new Date().getFullYear()); // Año actual
   const [totalIngreso, setTotalIngreso] = useState<number>(0);
   const [totalEgreso, setTotalEgreso] = useState<number>(0);
   const [clienteID, setClienteID] = useState<number | null>(null); // ClienteID del usuario
@@ -58,31 +56,29 @@ const IE = () => {
         return;
       }
 
-      // Realizamos la petición para obtener el resumen de facturas
-      const response = await axios.get<FacturaResumen[]>(`http://localhost:3001/api/facturas/cliente/${clienteID}/resumen`, {
+      const response = await axios.get<FacturaResumen[]>(`http://localhost:3001/api/facturas/cliente/${clienteID}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      // Filtrar las facturas del mes y año seleccionado
-      const facturasFiltradas = response.data.filter((factura) => {
-        const fechaFactura = new Date(factura.fecha);
-        return (
-          fechaFactura.getMonth() + 1 === mes && fechaFactura.getFullYear() === año
-        );
-      });
+      console.log('Respuesta de la API:', response.data);  // Verifica qué datos te está enviando la API
 
-      setFacturas(facturasFiltradas);
+      if (response.data.length === 0) {
+        console.log('No hay facturas disponibles para este cliente.');
+      }
 
-      // Calcular totales
-      const totalIngreso = facturasFiltradas
-        .filter((factura) => factura.tipo === 'Ingreso')
-        .reduce((sum, factura) => sum + factura.monto, 0);
+      // Aquí ya no filtramos por mes y año, solo usamos las facturas tal como están
+      setFacturas(response.data);
 
-      const totalEgreso = facturasFiltradas
-        .filter((factura) => factura.tipo === 'Egreso')
-        .reduce((sum, factura) => sum + factura.monto, 0);
+      // Calcula los totales
+      const totalIngreso = response.data
+        .filter((factura) => factura.tipo === 'I') // Filtra por tipo 'I' (Ingreso)
+        .reduce((sum, factura) => sum + factura.monto, 0); // Usa 'monto' como el total
+
+      const totalEgreso = response.data
+        .filter((factura) => factura.tipo === 'E') // Filtra por tipo 'E' (Egreso)
+        .reduce((sum, factura) => sum + factura.monto, 0); // Usa 'monto' como el total
 
       setTotalIngreso(totalIngreso);
       setTotalEgreso(totalEgreso);
@@ -90,7 +86,27 @@ const IE = () => {
     } catch (error) {
       console.error('Error al obtener las facturas:', error);
     }
-  }, [mes, año, clienteID]); // Agregar clienteID como dependencia
+  }, [clienteID]);
+
+  const exportarAExcel = () => {
+    if (facturas.length === 0) {
+      console.error('No hay facturas para exportar.');
+      return;
+    }
+  
+    // Convertimos las facturas a un formato adecuado para Excel
+    const worksheet = XLSX.utils.json_to_sheet(facturas.map(factura => ({
+      Tipo: factura.tipo,
+      Monto: factura.monto.toFixed(2),  // Formato monetario
+    })));
+  
+    // Creamos un libro de trabajo de Excel con las facturas
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Facturas');
+  
+    // Exportamos el archivo Excel
+    XLSX.writeFile(workbook, `facturas_cliente_${clienteID}.xlsx`);
+  };  
 
   useEffect(() => {
     if (clienteID) {
@@ -122,38 +138,18 @@ const IE = () => {
         <p>Aquí podrás gestionar los ingresos y egresos de tus clientes.</p>
       </div>
 
-      {/* Filtros de mes y año */}
-      <div className="mb-6">
-        <select
-          value={mes}
-          onChange={(e) => setMes(Number(e.target.value))}
-          className="px-4 py-2 border rounded-md"
-        >
-          {[...Array(12)].map((_, index) => (
-            <option key={index} value={index + 1}>
-              {new Date(0, index).toLocaleString('default', { month: 'long' })}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={año}
-          onChange={(e) => setAño(Number(e.target.value))}
-          className="ml-4 px-4 py-2 border rounded-md"
-        >
-          {[2023, 2024, 2025].map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Botón de exportar a Excel */}
+      <button
+        onClick={exportarAExcel}
+        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition mb-6"
+      >
+        Exportar a Excel
+      </button>
 
       {/* Tabla de Facturas */}
       <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-sm">
         <thead>
           <tr>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Fecha</th>
             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tipo</th>
             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Monto</th>
           </tr>
@@ -161,14 +157,13 @@ const IE = () => {
         <tbody>
           {facturas.length === 0 ? (
             <tr>
-              <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
-                No se encontraron facturas para este mes y año.
+              <td colSpan={2} className="px-6 py-3 text-center text-gray-500">
+                No se encontraron facturas.
               </td>
             </tr>
           ) : (
             facturas.map((factura, index) => (
               <tr key={index}>
-                <td className="px-6 py-3 text-sm text-gray-700">{new Date(factura.fecha).toLocaleDateString()}</td>
                 <td className="px-6 py-3 text-sm text-gray-700">{factura.tipo}</td>
                 <td className="px-6 py-3 text-sm text-gray-700">{factura.monto}</td>
               </tr>
