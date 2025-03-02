@@ -157,7 +157,8 @@ const ClienteDashboard = () => {
   
       await axios.put(
         `http://localhost:3001/api/facturas/${FacturaID}`, // Usamos FacturaID directamente
-        { Estatus: nuevoEstatus }
+        { Estatus: nuevoEstatus },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
   
       // Actualizamos la lista de facturas después de la actualización

@@ -39,10 +39,10 @@ export default function ContadorDashboard() {
             Clientes
           </button>
           <button
-            onClick={() => router.push("/gestion-vencimientos")}
+            onClick={() => router.push("/Ingresos-Egresos")}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition w-full sm:w-auto"
           >
-            Gestión de Vencimientos
+            Ingresos y Egresos de clientes
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
