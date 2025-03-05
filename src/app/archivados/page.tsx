@@ -18,6 +18,7 @@ export default function Archivados() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [clientesArchivados, setClientesArchivados] = useState<ClienteArchivado[]>([]);
+  const [isRestoring, setIsRestoring] = useState(false); // Estado para mostrar el proceso de restauración
 
   useEffect(() => {
     const storedUserName = getUserName();
@@ -42,17 +43,29 @@ export default function Archivados() {
     }
   };
 
-  const restaurarCliente = async (clienteID: number) => {
+  const handleRestaurarCliente = async (clienteId: number) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`http://localhost:3001/api/clientes/restaurar/${clienteID}`, {}, {
+      if (!token) {
+        console.error("Usuario no autenticado");
+        return;
+      }
+
+      setIsRestoring(true); // Mostrar proceso de restauración
+
+      await axios.put(`http://localhost:3001/api/clientes/restaurar/${clienteId}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      alert("Cliente restaurado correctamente.");
-      obtenerClientesArchivados();
+
+      alert("Cliente restaurado correctamente");
+
+      // Actualizar la lista de clientes archivados automáticamente
+      setClientesArchivados((prevClientes) => prevClientes.filter((cliente) => cliente.ClienteID !== clienteId));
     } catch (error) {
       console.error("Error al restaurar cliente:", error);
       alert("Hubo un error al restaurar el cliente.");
+    } finally {
+      setIsRestoring(false); // Ocultar proceso de restauración
     }
   };
 
@@ -87,7 +100,7 @@ export default function Archivados() {
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl mt-6 mx-auto">
         <h2 className="text-xl font-semibold mb-4">Clientes Archivados</h2>
         {clientesArchivados.length === 0 ? (
-          <p>No hay clientes archivados.</p>
+          <p className="text-gray-500">No hay clientes archivados.</p>
         ) : (
           <ul className="divide-y divide-gray-300">
             {clientesArchivados.map((cliente) => (
@@ -97,10 +110,11 @@ export default function Archivados() {
                   <p className="text-gray-500">{cliente.Correo} | {cliente.Telefono}</p>
                 </div>
                 <button
-                  onClick={() => restaurarCliente(cliente.ClienteID)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  onClick={() => handleRestaurarCliente(cliente.ClienteID)}
+                  disabled={isRestoring} // Deshabilitar botón mientras se restaura
+                  className={`px-4 py-2 rounded-lg transition ${isRestoring ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"}`}
                 >
-                  Restaurar
+                  {isRestoring ? "Restaurando..." : "Restaurar"}
                 </button>
               </li>
             ))}
