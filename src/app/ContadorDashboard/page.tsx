@@ -174,13 +174,13 @@ export default function ContadorDashboard() {
       {/* Botones de navegación */}
       <div className="flex justify-center gap-6 mt-6">
         <button
-          onClick={() => router.push("/clientes")}
+          onClick={() => router.push("/Clientes")}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
           Clientes
         </button>
         <button
-          onClick={() => router.push("/ingresos-egresos")}
+          onClick={() => router.push("/Ingresos-Egresos")}
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
         >
           Ingresos y Egresos
