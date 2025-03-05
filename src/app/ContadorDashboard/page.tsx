@@ -22,6 +22,10 @@ export default function ContadorDashboard() {
   const [fechaVencimiento, setFechaVencimiento] = useState("");
   const [estado, setEstado] = useState("Pendiente");
 
+  // Estado para el modal de confirmación de edición
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [alertaSeleccionada, setAlertaSeleccionada] = useState<Alerta | null>(null);
+
   useEffect(() => {
     const storedUserName = getUserName();
     setUserName(storedUserName);
@@ -33,24 +37,24 @@ export default function ContadorDashboard() {
   };
 
   // Función para obtener las alertas
-const obtenerAlertas = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    const response = await axios.get('http://localhost:3001/api/alertas', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    setAlertas(response.data);  // Actualiza el estado con las alertas
-  } catch (error) {
-    console.error("Error al obtener las alertas", error);
-  }
-};
+  const obtenerAlertas = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get('http://localhost:3001/api/alertas', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setAlertas(response.data);  // Actualiza el estado con las alertas
+    } catch (error) {
+      console.error("Error al obtener las alertas", error);
+    }
+  };
 
-// Llama a obtenerAlertas cuando el componente se monta
-useEffect(() => {
-  obtenerAlertas();
-}, []);
+  // Llama a obtenerAlertas cuando el componente se monta
+  useEffect(() => {
+    obtenerAlertas();
+  }, []);
 
   const handleAgregarAlerta = async () => {
     if (!clienteNombre || !tipo || !fechaVencimiento) {
@@ -62,7 +66,7 @@ useEffect(() => {
       const token = localStorage.getItem("token");
       await axios.post(
         "http://localhost:3001/api/alertas",
-        {  
+        {
           NombreClientes: clienteNombre, // Usamos el nombre manual del cliente
           Tipo: tipo,
           FechaVencimiento: fechaVencimiento,
@@ -124,7 +128,7 @@ useEffect(() => {
 
     try {
       await axios.put(
-        `http://localhost:3001/api/alertas/${alertaID}`,
+        `http://localhost:3001/api/alertas/${alertaID}/estado`, // CORREGIDA
         { Estado: nuevoEstado },
         {
           headers: {
@@ -134,8 +138,10 @@ useEffect(() => {
       );
 
       alert("Estado de alerta actualizado");
+      setIsEditModalOpen(false);
+      setAlertaSeleccionada(null);
 
-      // Actualizar las alertas
+      // Actualizar la lista de alertas
       const res = await axios.get("http://localhost:3001/api/alertas", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -265,12 +271,21 @@ useEffect(() => {
                       <span className="text-gray-500">Fecha de vencimiento: {alerta.FechaVencimiento}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEditarEstado(alerta.AlertaID, alerta.Estado === "Pendiente" ? "Atendida" : "Pendiente")}
-                        className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
-                      >
-                        {alerta.Estado === "Pendiente" ? "Marcar como Atendida" : "Marcar como Pendiente"}
-                      </button>
+                      {alerta.Estado === "Pendiente" ? (
+                        <button
+                          onClick={() => {
+                            setAlertaSeleccionada(alerta);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
+                        >
+                          Pendiente
+                        </button>
+                      ) : (
+                        <span className="px-3 py-1 bg-green-500 text-white rounded-lg">
+                          Atendida
+                        </span>
+                      )}
                       <button
                         onClick={() => handleEliminarAlerta(alerta.AlertaID)}
                         className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
@@ -286,21 +301,25 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Modal de confirmación de cierre de sesión */}
-      {isModalOpen && (
+      {/* Modal de confirmación de edición */}
+      {isEditModalOpen && alertaSeleccionada && (
         <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold">¿Seguro que quieres cerrar sesión?</h3>
+            <h3 className="text-lg font-semibold">Confirmar Cambio de Estado</h3>
+            <p className="mt-2">
+              ¿Estás seguro de que deseas marcar la alerta de <strong>{alertaSeleccionada.Tipo}</strong> 
+              de <strong>{alertaSeleccionada.NombreClientes}</strong> como &quot;Atendida&quot;?
+            </p>
             <div className="mt-4 flex justify-end gap-4">
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsEditModalOpen(false)}
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg"
+                onClick={() => handleEditarEstado(alertaSeleccionada.AlertaID, "Atendida")}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg"
               >
                 Confirmar
               </button>
@@ -308,6 +327,19 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación de cierre de sesión */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h3 className="text-lg font-semibold">¿Seguro que quieres cerrar sesión?</h3>
+            <div className="mt-4 flex justify-end gap-4">
+              <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-500 text-white rounded-lg">Cancelar</button>
+              <button onClick={handleLogout} className="px-4 py-2 bg-red-600 text-white rounded-lg">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
