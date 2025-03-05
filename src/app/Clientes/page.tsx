@@ -191,14 +191,14 @@ const Clientes = () => {
     setShowLogoutModal(false);
   };
 
-  const handleDeleteCliente = (cliente: Cliente) => {
+  const handleClienteArchive = (cliente: Cliente) => {
     setSelectedCliente(cliente);
     setShowDeleteModal(true);
   };
 
   const confirmarEliminacion = () => {
     if (selectedCliente) {
-      handleDelete(selectedCliente.ClienteID);
+      handleArchiveCliente(selectedCliente.ClienteID);
     }
     setShowDeleteModal(false);
   };
@@ -207,27 +207,31 @@ const Clientes = () => {
     setShowDeleteModal(false);
   };
 
-  const handleDelete = async (clienteId: number) => {
+  const handleArchiveCliente = async (clienteId: number) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("Usuario no autenticado");
         return;
       }
-
-      await axios.delete(`http://localhost:3001/api/clientes/${clienteId}`, {
+  
+      await axios.put(`http://localhost:3001/api/clientes/archivar/${clienteId}`, {}, {
         headers: {
-          Authorization: `Bearer ${token}`,  // Aquí se envía el token
+          Authorization: `Bearer ${token}`,
         },
       });
-      setMessage('Cliente eliminado exitosamente');
+  
+      alert("Cliente archivado correctamente");
+  
+      // Filtrar los clientes para que desaparezcan de la lista actual
       setClientes(clientes.filter((cliente) => cliente.ClienteID !== clienteId));
       setFilteredClientes(filteredClientes.filter((cliente) => cliente.ClienteID !== clienteId));
+  
     } catch (error) {
-      console.error('Error al eliminar cliente:', error);
-      setErrorMessage('Error al eliminar cliente');
+      console.error("Error al archivar cliente:", error);
+      alert("Hubo un error al archivar el cliente.");
     }
-  };
+  };  
 
   return (
     <div className="p-6 bg-gray-50">
@@ -360,7 +364,7 @@ const Clientes = () => {
                     Editar
                   </button>
                   <button
-                    onClick={() => handleDeleteCliente(cliente)}
+                    onClick={() => handleClienteArchive(cliente)}
                     className="ml-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500 mr-2"
                   >
                     Eliminar
@@ -397,7 +401,7 @@ const Clientes = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <p>¿Estás seguro de que deseas eliminar este cliente?</p>
+            <p>¿Estás seguro de que deseas eliminar este cliente?, al aceptar se ira al apartado de archivados</p>
             <div className="mt-4 flex justify-end space-x-4">
               <button
                 onClick={cancelarEliminacion}
