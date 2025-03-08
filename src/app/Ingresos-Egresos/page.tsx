@@ -78,71 +78,77 @@ const IngresosEgresos = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">{`Bienvenido, ${userName || 'Cargando...'}`}</h2>
-        <button
-          onClick={handleLogout}
-          className="text-red-500 font-semibold hover:text-red-600 focus:ring-2 focus:ring-red-500"
-        >
-          Cerrar sesión
-        </button>
+    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
+      {/* Encabezado */}
+      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
+        <h2 className="text-2xl font-semibold text-[#14213D]">{`Bienvenido, ${userName || "Cargando..."}`}</h2>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push('/ContadorDashboard')}
+            className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] transition"
+          >
+            Volver
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
-
-      <button
-        onClick={() => router.push('/ContadorDashboard')}
-        className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mb-4"
-      >
-        Volver
-      </button>
-
-      <input
-        type="text"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Buscar cliente"
-        className="w-full mb-6 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-      />
-
-      <div className="space-y-4">
-        {filteredClientes.length === 0 ? (
-          <p>No se encontraron clientes.</p>
-        ) : (
-          filteredClientes.map(cliente => (
-            <div key={cliente.ClienteID} className="border p-4 rounded-md shadow-sm">
-              <div className="flex justify-between items-center">
-                <div>
+  
+      {/* Barra de búsqueda (ocupa toda la vista) */}
+      <div className="mt-6 flex justify-center">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar cliente..."
+          className="w-full max-w-7xl p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-md text-lg"
+        />
+      </div>
+  
+      {/* Lista de clientes (ocupa toda la vista) */}
+      <div className="mt-6 w-full flex justify-center">
+        <div className="w-full max-w-7xl space-y-4">
+          {filteredClientes.length === 0 ? (
+            <p className="text-gray-300 text-center text-lg">No se encontraron clientes.</p>
+          ) : (
+            filteredClientes.map(cliente => (
+              <div key={cliente.ClienteID} className="bg-white border p-6 rounded-lg shadow-lg flex justify-between items-center w-full">
+                <div className="text-[#14213D]">
                   <h3 className="text-lg font-semibold">{cliente.Nombre}</h3>
                   <p className="text-sm text-gray-500">{cliente.RFC}</p>
                 </div>
-                <div>
-                  <button
-                    onClick={() => router.push(`/IE/${cliente.ClienteID}`)}
-                    className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500"
-                  >
-                    Ingresos-Egresos
-                  </button>
-                </div>
+                <button
+                  onClick={() => router.push(`/IE/${cliente.ClienteID}`)}
+                  className="px-6 py-3 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C] transition"
+                >
+                  Ingresos-Egresos
+                </button>
               </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
-
+  
+      {/* Modal de confirmación de cierre de sesión */}
       {showLogoutModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <p>¿Estás seguro de que deseas cerrar sesión?</p>
-            <div className="mt-4 flex justify-end space-x-4">
+        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
+            <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
+            <p className="mt-2 text-[#14213D]">Se cerrará tu sesión y deberás volver a iniciar sesión.</p>
+            <div className="mt-4 flex justify-end gap-4">
               <button
                 onClick={cancelarLogout}
-                className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmarLogout}
-                className="bg-red-500 text-white py-2 px-4 rounded-md"
+                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
               >
                 Confirmar
               </button>
@@ -152,6 +158,6 @@ const IngresosEgresos = () => {
       )}
     </div>
   );
-};
+}  
 
 export default IngresosEgresos;
