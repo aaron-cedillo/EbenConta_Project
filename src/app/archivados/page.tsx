@@ -92,7 +92,7 @@ export default function Archivados() {
           onClick={() => router.push("/ContadorDashboard")}
           className="px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
         >
-          Volver al Menu
+          Volver al menú
         </button>
       </div>
   

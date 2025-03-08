@@ -26,14 +26,14 @@ export default function IngresosEgresos() {
   useEffect(() => {
     const fetchClienteNombre = async () => {
       if (!ClienteID) return;
-  
+
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
           `http://localhost:3001/api/clientes/${ClienteID}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-  
+
         if (response.data && response.data.Nombre) {
           setClienteNombre(response.data.Nombre);
         } else {
@@ -44,7 +44,7 @@ export default function IngresosEgresos() {
         setClienteNombre("ClienteDesconocido");
       }
     };
-  
+
     fetchClienteNombre();
   }, [ClienteID]);
 
@@ -114,7 +114,7 @@ export default function IngresosEgresos() {
       console.error("No hay facturas para exportar.");
       return;
     }
-  
+
     const worksheet = XLSX.utils.json_to_sheet(
       facturas.map((factura) => ({
         Fecha: factura.Fecha,
@@ -122,14 +122,14 @@ export default function IngresosEgresos() {
         Tipo: factura.Tipo === "I" ? "Ingreso" : "Egreso",
       }))
     );
-  
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Facturas");
-  
+
     // Asegurar que el nombre no tenga espacios ni caracteres especiales
     const fileName = `facturas_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
     XLSX.writeFile(workbook, fileName);
-  };  
+  };
 
   useEffect(() => {
     if (ClienteID) {
@@ -142,24 +142,22 @@ export default function IngresosEgresos() {
       {/* Encabezado */}
       <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
         <h2 className="text-2xl font-semibold text-[#14213D]">{`Bienvenido, ${userName || "Cargando..."}`}</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
-        >
-          Cerrar Sesión
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push("/Ingresos-Egresos")}
+            className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] transition"
+          >
+            Volver al menú de Ingresos y Egresos
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
-  
-      {/* Botón de navegación */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={() => router.push("/Ingresos-Egresos")}
-          className="px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
-        >
-          Volver al menu de Ingresos y Egresos
-        </button>
-      </div>
-  
+
       {/* Filtro por fecha */}
       <div className="mt-4 bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
         <h2 className="text-lg font-semibold text-[#14213D] mb-4">Filtrar por Fecha</h2>
@@ -190,7 +188,7 @@ export default function IngresosEgresos() {
           </button>
         </div>
       </div>
-  
+
       {/* Botón de exportar a Excel */}
       <div className="flex justify-center mt-4">
         <button
@@ -200,7 +198,7 @@ export default function IngresosEgresos() {
           Exportar a Excel
         </button>
       </div>
-  
+
       {/* Tabla de Facturas */}
       <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
         <h2 className="text-xl font-semibold text-[#14213D] mb-4">Facturas</h2>
@@ -226,9 +224,10 @@ export default function IngresosEgresos() {
                   <td className="py-2 px-4 text-[#14213D]">
                     {factura.Total !== undefined ? factura.Total.toFixed(2) : "0.00"}
                   </td>
-                  <td className={`py-2 px-4 font-semibold ${
-                    factura.Tipo === "I" ? "text-green-600" : "text-red-600"
-                  }`}>
+                  <td
+                    className={`py-2 px-4 font-semibold ${factura.Tipo === "I" ? "text-green-600" : "text-red-600"
+                      }`}
+                  >
                     {factura.Tipo === "I" ? "Ingreso" : "Egreso"}
                   </td>
                 </tr>
@@ -237,13 +236,20 @@ export default function IngresosEgresos() {
           </tbody>
         </table>
       </div>
-  
+
       {/* Totales de Ingresos y Egresos */}
-      <div className="mt-6 flex justify-between text-lg font-semibold text-white max-w-4xl mx-auto bg-[#FCA311] p-4 rounded-lg shadow-md">
-        <p>Total Ingresos: ${totalIngreso.toFixed(2)}</p>
-        <p>Total Egresos: ${totalEgreso.toFixed(2)}</p>
+      <div className="mt-6 flex justify-between items-center text-lg font-semibold text-white max-w-4xl mx-auto bg-[#FCA311] p-6 rounded-lg shadow-md">
+        <div className="flex flex-col items-center w-1/2">
+          <p className="text-xl whitespace-nowrap">Total Ingresos</p> {/* Mantiene todo en una sola línea */}
+          <p className="text-2xl font-bold mt-2">${totalIngreso.toFixed(2)}</p>
+        </div>
+        <div className="w-1 h-16 bg-white mx-4"></div> {/* Línea divisoria */}
+        <div className="flex flex-col items-center w-1/2">
+          <p className="text-xl whitespace-nowrap">Total Egresos</p> {/* Mantiene todo en una sola línea */}
+          <p className="text-2xl font-bold mt-2">${totalEgreso.toFixed(2)}</p>
+        </div>
       </div>
-  
+      
       {/* Modal de confirmación de cierre de sesión */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#14213D] bg-opacity-50">
