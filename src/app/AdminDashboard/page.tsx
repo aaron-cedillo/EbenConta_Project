@@ -171,12 +171,12 @@ const AdminDashboard = () => {
           Cerrar Sesión
         </button>
       </div>
-  
+
       {/* Contenido Principal */}
       <h2 className="text-2xl font-semibold text-white mt-6 mb-6">
         {editMode ? "Editar Contador" : "Registrar Contador"}
       </h2>
-  
+
       <form onSubmit={handleRegister} className="bg-white p-6 rounded-lg shadow-lg mb-8">
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Nombre</label>
@@ -233,10 +233,10 @@ const AdminDashboard = () => {
           </button>
         )}
       </form>
-  
+
       {message && <p className="text-center text-green-600 font-semibold">{message}</p>}
       {errorMessage && <p className="text-center text-red-600 font-semibold">{errorMessage}</p>}
-  
+
       <div className="mb-6">
         <input
           type="text"
@@ -246,15 +246,15 @@ const AdminDashboard = () => {
           className="p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
         />
       </div>
-  
+
       <h2 className="text-2xl font-semibold text-white mt-12 mb-6">Contadores Registrados</h2>
       <table className="w-full table-auto border-collapse bg-white rounded-lg shadow-lg">
         <thead>
           <tr className="bg-[#FCA311] text-white text-left text-sm font-semibold">
-            <th className="py-2 px-4 text-black">Nombre</th>
-            <th className="py-2 px-4 text-black">Correo</th>
-            <th className="py-2 px-4 text-black">Fecha Expiración</th>
-            <th className="py-2 px-4 text-black">Acciones</th>
+            <th className="py-2 px-4 text-white">Nombre</th>
+            <th className="py-2 px-4 text-white">Correo</th>
+            <th className="py-2 px-4 text-white">Fecha Expiración</th>
+            <th className="py-2 px-4 text-white">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -264,7 +264,9 @@ const AdminDashboard = () => {
               <td className="py-2 px-4 text-sm text-black">{contador.Correo}</td>
               <td className="py-2 px-4 text-sm text-black">{contador.FechaExpiracion}</td>
               <td className="py-2 px-4 text-sm">
-                <button onClick={() => handleEdit(contador)} className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mr-2">
+                <button
+                  onClick={() => handleEdit(contador)}
+                  className="bg-[#FCA311] text-white py-1 px-3 rounded-md hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] mr-2">
                   Editar
                 </button>
                 <button onClick={() => handleDeleteContador(contador)} className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500">
@@ -275,7 +277,7 @@ const AdminDashboard = () => {
           ))}
         </tbody>
       </table>
-  
+
       {/* Modal para confirmar cierre de sesión */}
       {showLogoutModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
@@ -292,7 +294,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
-  
+
       {/* Modal de confirmación de eliminación */}
       {showDeleteModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
@@ -311,6 +313,6 @@ const AdminDashboard = () => {
       )}
     </div>
   );
-};  
+};
 
 export default AdminDashboard;
