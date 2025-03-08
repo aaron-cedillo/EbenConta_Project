@@ -160,21 +160,23 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
       {/* Encabezado */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">{`Bienvenido, ${userName || 'Cargando...'}`}</h2>
+      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
+        <h1 className="text-2xl font-semibold text-[#14213D]">Bienvenido, {userName}</h1>
         <button
           onClick={handleLogout}
-          className="text-red-500 font-semibold hover:text-red-600 focus:ring-2 focus:ring-red-500"
+          className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition"
         >
-          Cerrar sesión
+          Cerrar Sesión
         </button>
       </div>
-
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-        {editMode ? 'Editar Contador' : 'Registrar Contador'}
+  
+      {/* Contenido Principal */}
+      <h2 className="text-2xl font-semibold text-white mt-6 mb-6">
+        {editMode ? "Editar Contador" : "Registrar Contador"}
       </h2>
+  
       <form onSubmit={handleRegister} className="bg-white p-6 rounded-lg shadow-lg mb-8">
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Nombre</label>
@@ -183,7 +185,7 @@ const AdminDashboard = () => {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
           />
         </div>
         <div className="mb-4">
@@ -193,7 +195,7 @@ const AdminDashboard = () => {
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
             required
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
           />
         </div>
         <div className="mb-4">
@@ -202,8 +204,8 @@ const AdminDashboard = () => {
             type="password"
             value={contrasena}
             onChange={(e) => setContrasena(e.target.value)}
-            placeholder="******" // Placeholder con asteriscos
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            placeholder="******"
+            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
           />
         </div>
         <div className="mb-4">
@@ -212,11 +214,14 @@ const AdminDashboard = () => {
             type="date"
             value={fechaExpiracion}
             onChange={(e) => setFechaExpiracion(e.target.value)}
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
           />
         </div>
-        <button type="submit" className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 focus:ring-2 focus:ring-green-500">
-          {editMode ? 'Actualizar Contador' : 'Registrar Contador'}
+        <button
+          type="submit"
+          className="w-full bg-[#FCA311] text-white py-3 rounded-md hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311]"
+        >
+          {editMode ? "Actualizar Contador" : "Registrar Contador"}
         </button>
         {editMode && (
           <button
@@ -228,38 +233,38 @@ const AdminDashboard = () => {
           </button>
         )}
       </form>
-
+  
       {message && <p className="text-center text-green-600 font-semibold">{message}</p>}
       {errorMessage && <p className="text-center text-red-600 font-semibold">{errorMessage}</p>}
-
+  
       <div className="mb-6">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Buscar contador..."
-          className="p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+          className="p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
         />
       </div>
-
-      <h2 className="text-2xl font-semibold text-gray-800 mt-12 mb-6">Contadores Registrados</h2>
+  
+      <h2 className="text-2xl font-semibold text-white mt-12 mb-6">Contadores Registrados</h2>
       <table className="w-full table-auto border-collapse bg-white rounded-lg shadow-lg">
         <thead>
-          <tr className="bg-gray-100 text-left text-sm font-semibold text-gray-700">
-            <th className="py-2 px-4">Nombre</th>
-            <th className="py-2 px-4">Correo</th>
-            <th className="py-2 px-4">Fecha Expiración</th>
-            <th className="py-2 px-4">Acciones</th>
+          <tr className="bg-[#FCA311] text-white text-left text-sm font-semibold">
+            <th className="py-2 px-4 text-black">Nombre</th>
+            <th className="py-2 px-4 text-black">Correo</th>
+            <th className="py-2 px-4 text-black">Fecha Expiración</th>
+            <th className="py-2 px-4 text-black">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {filteredContadores.map((contador) => (
             <tr key={contador.UsuarioID} className="border-b">
-              <td className="py-2 px-4 text-sm">{contador.Nombre}</td>
-              <td className="py-2 px-4 text-sm">{contador.Correo}</td>
-              <td className="py-2 px-4 text-sm">{contador.FechaExpiracion}</td>
+              <td className="py-2 px-4 text-sm text-black">{contador.Nombre}</td>
+              <td className="py-2 px-4 text-sm text-black">{contador.Correo}</td>
+              <td className="py-2 px-4 text-sm text-black">{contador.FechaExpiracion}</td>
               <td className="py-2 px-4 text-sm">
-                <button onClick={() => handleEdit(contador)} className="bg-orange-500 text-white py-1 px-3 rounded-md hover:bg-orange-600 focus:ring-2 focus:ring-orange-500 mr-2">
+                <button onClick={() => handleEdit(contador)} className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mr-2">
                   Editar
                 </button>
                 <button onClick={() => handleDeleteContador(contador)} className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500">
@@ -270,34 +275,42 @@ const AdminDashboard = () => {
           ))}
         </tbody>
       </table>
-
+  
       {/* Modal para confirmar cierre de sesión */}
       {showLogoutModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-600 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-black">
             <h3 className="text-lg font-semibold">¿Estás seguro que deseas cerrar sesión?</h3>
             <div className="flex justify-between mt-4">
-              <button onClick={cancelarLogout} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">Cancelar</button>
-              <button onClick={confirmarLogout} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Cerrar sesión</button>
+              <button onClick={cancelarLogout} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">
+                Cancelar
+              </button>
+              <button onClick={confirmarLogout} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
+                Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
       )}
-
+  
       {/* Modal de confirmación de eliminación */}
       {showDeleteModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-600 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-black">
             <h3 className="text-lg font-semibold">¿Estás seguro que deseas eliminar este contador?</h3>
             <div className="flex justify-between mt-4">
-              <button onClick={cancelarEliminacion} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">Cancelar</button>
-              <button onClick={confirmarEliminacion} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Eliminar</button>
+              <button onClick={cancelarEliminacion} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">
+                Cancelar
+              </button>
+              <button onClick={confirmarEliminacion} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
+                Eliminar
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-};
+};  
 
 export default AdminDashboard;
