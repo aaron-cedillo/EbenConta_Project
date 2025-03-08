@@ -22,13 +22,15 @@ const LoginPage = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#14213D]">
       {/* Mensaje de bienvenida */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-white">Bienvenido a EbenConta</h1>
+        <h1 className="text-4xl font-bold text-white">
+          Bienvenido a <span className="text-white">Eben</span><span className="text-[#FCA311]">Conta</span>
+        </h1>
       </div>
 
       {/* Formulario de inicio de sesión */}
       <div className="bg-[#E5E5E5] p-8 rounded-xl shadow-xl max-w-sm w-full">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Iniciar sesión</h2>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Correo electrónico</label>
