@@ -214,182 +214,188 @@ const Clientes = () => {
         console.error("Usuario no autenticado");
         return;
       }
-  
+
       await axios.put(`http://localhost:3001/api/clientes/archivar/${clienteId}`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       alert("Cliente archivado correctamente");
-  
+
       // Filtrar los clientes para que desaparezcan de la lista actual
       setClientes(clientes.filter((cliente) => cliente.ClienteID !== clienteId));
       setFilteredClientes(filteredClientes.filter((cliente) => cliente.ClienteID !== clienteId));
-  
+
     } catch (error) {
       console.error("Error al archivar cliente:", error);
       alert("Hubo un error al archivar el cliente.");
     }
-  };  
+  };
 
   return (
-    <div className="p-6 bg-gray-50">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">{`Bienvenido, ${userName || 'Cargando...'}`}</h2>
-        <button
-          onClick={handleLogout}
-          className="text-red-500 font-semibold hover:text-red-600 focus:ring-2 focus:ring-red-500"
-        >
-          Cerrar sesión
-        </button>
+    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
+      {/* Encabezado */}
+      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
+        <h2 className="text-2xl font-semibold text-[#14213D]">{`Bienvenido, ${userName || "Cargando..."}`}</h2>
+        <div className="flex gap-4">
+          <button
+            onClick={() => router.push('/ContadorDashboard')}
+            className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] transition"
+          >
+            Volver
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
 
-      <button
-        onClick={() => router.push('/ContadorDashboard')}
-        className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mb-4"
-      >
-        Volver
-      </button>
-
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-        {editMode ? 'Editar Cliente' : 'Registrar Cliente'}
+      {/* Formulario de Cliente */}
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto mt-10">
+      <h2 className="text-2xl font-semibold text-[#14213D] mb-6 text-center">
+        {editMode ? "Editar Cliente" : "Registrar Cliente"}
       </h2>
-      <form onSubmit={editMode ? handleEdit : handleRegister} className="bg-white p-6 rounded-lg shadow-lg mb-8">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Nombre</label>
-          <input
-            type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-          />
+      <form onSubmit={editMode ? handleEdit : handleRegister} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[#14213D] font-medium">Nombre</label>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+              className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-[#14213D] font-medium">RFC</label>
+            <input
+              type="text"
+              value={rfc}
+              onChange={(e) => setRfc(e.target.value)}
+              required
+              className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-sm"
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">RFC</label>
-          <input
-            type="text"
-            value={rfc}
-            onChange={(e) => setRfc(e.target.value)}
-            required
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-          />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[#14213D] font-medium">Correo</label>
+            <input
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              required
+              className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-[#14213D] font-medium">Teléfono</label>
+            <input
+              type="tel"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-sm"
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Correo</label>
-          <input
-            type="email"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            required
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Teléfono</label>
-          <input
-            type="tel"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Dirección</label>
+
+        <div>
+          <label className="block text-[#14213D] font-medium">Dirección</label>
           <input
             type="text"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
             required
-            className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-sm"
           />
         </div>
-        <div className="flex justify-between items-center">
+
+        <div className="flex justify-center mt-4">
           <button
             type="submit"
-            className="bg-indigo-500 text-white py-2 px-6 rounded-md hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-500"
+            className="bg-[#FCA311] text-white py-3 px-6 rounded-lg hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] transition w-full"
           >
-            {editMode ? 'Actualizar Cliente' : 'Registrar Cliente'}
+            {editMode ? "Actualizar Cliente" : "Registrar Cliente"}
           </button>
-          {editMode && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="text-red-500 hover:text-red-600"
-            >
-              Cancelar
-            </button>
-          )}
         </div>
       </form>
+    </div>
 
-      {message && (
-        <div className="mb-4 text-green-500">{message}</div>
-      )}
-      {errorMessage && (
-        <div className="mb-4 text-red-500">{errorMessage}</div>
-      )}
+      {/* Mensajes */}
+      {message && <div className="text-center text-green-500 font-semibold mt-4">{message}</div>}
+      {errorMessage && <div className="text-center text-red-500 font-semibold mt-4">{errorMessage}</div>}
 
-      <input
-        type="text"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Buscar cliente"
-        className="w-full mb-6 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-      />
+      {/* Buscador de clientes */}
+      <div className="mt-6 flex justify-center">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar cliente..."
+          className="w-full max-w-7xl p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-md text-lg"
+        />
+      </div>
 
-      <div className="space-y-4">
-        {filteredClientes.length === 0 ? (
-          <p>No se encontraron clientes.</p>
-        ) : (
-          filteredClientes.map(cliente => (
-            <div key={cliente.ClienteID} className="border p-4 rounded-md shadow-sm">
-              <div className="flex justify-between items-center">
-                <div>
+      {/* Lista de clientes */}
+      <div className="mt-6 w-full flex justify-center">
+        <div className="w-full max-w-7xl space-y-4">
+          {filteredClientes.length === 0 ? (
+            <p className="text-gray-300 text-center text-lg">No se encontraron clientes.</p>
+          ) : (
+            filteredClientes.map(cliente => (
+              <div key={cliente.ClienteID} className="bg-white border p-6 rounded-lg shadow-lg flex justify-between items-center w-full">
+                <div className="text-[#14213D]">
                   <h3 className="text-lg font-semibold">{cliente.Nombre}</h3>
                   <p className="text-sm text-gray-500">{cliente.RFC}</p>
                 </div>
-                <div>
+                <div className="flex gap-2">
                   <button
                     onClick={() => router.push(`/ClienteDashboard/${cliente.ClienteID}`)}
-                    className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 mr-2"
+                    className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C] transition"
                   >
                     Ver Cliente
                   </button>
                   <button
                     onClick={() => handleEditClient(cliente)}
-                    className="bg-indigo-500 text-white py-1 px-3 rounded-md hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-500"
+                    className="px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => handleClienteArchive(cliente)}
-                    className="ml-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500 mr-2"
+                    className="px-4 py-2 bg-[#E63946] text-white rounded-lg hover:bg-[#D62839] transition"
                   >
                     Eliminar
                   </button>
                 </div>
               </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
 
+      {/* Modal de confirmación de cierre de sesión */}
       {showLogoutModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <p>¿Estás seguro de que deseas cerrar sesión?</p>
-            <div className="mt-4 flex justify-end space-x-4">
+        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
+            <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
+            <p className="mt-2 text-[#14213D]">Se cerrará tu sesión y deberás volver a iniciar sesión.</p>
+            <div className="mt-4 flex justify-end gap-4">
               <button
                 onClick={cancelarLogout}
-                className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmarLogout}
-                className="bg-red-500 text-white py-2 px-4 rounded-md"
+                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
               >
                 Confirmar
               </button>
@@ -398,20 +404,24 @@ const Clientes = () => {
         </div>
       )}
 
+      {/* Modal de confirmación de eliminación */}
       {showDeleteModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <p>¿Estás seguro de que deseas eliminar este cliente?, al aceptar se ira al apartado de archivados</p>
-            <div className="mt-4 flex justify-end space-x-4">
+        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
+            <h3 className="text-lg font-semibold text-[#14213D]">Confirmar Eliminación</h3>
+            <p className="mt-2 text-[#14213D]">
+              ¿Estás seguro de que deseas eliminar este cliente? Se moverá al apartado de **Archivados**.
+            </p>
+            <div className="mt-4 flex justify-end gap-4">
               <button
                 onClick={cancelarEliminacion}
-                className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmarEliminacion}
-                className="bg-red-500 text-white py-2 px-4 rounded-md"
+                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
               >
                 Confirmar
               </button>
@@ -421,6 +431,6 @@ const Clientes = () => {
       )}
     </div>
   );
-};
+}
 
 export default Clientes;
