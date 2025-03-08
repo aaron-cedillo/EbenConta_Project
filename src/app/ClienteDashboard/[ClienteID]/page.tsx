@@ -203,7 +203,7 @@ const ClienteDashboard = () => {
             onClick={() => router.push('/Clientes')}
             className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition"
           >
-            Volver
+            Volver a la lista de clientes
           </button>
           <button
             onClick={() => setIsModalOpen(true)}

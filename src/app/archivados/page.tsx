@@ -78,24 +78,22 @@ export default function Archivados() {
       {/* Encabezado */}
       <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
         <h1 className="text-2xl font-semibold text-[#14213D]">Bienvenido, {userName}</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
-        >
-          Cerrar Sesión
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => router.push("/ContadorDashboard")}
+            className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition"
+          >
+            Volver al menú
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
-  
-      {/* Botón de navegación */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={() => router.push("/ContadorDashboard")}
-          className="px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
-        >
-          Volver al menú
-        </button>
-      </div>
-  
+
       {/* Lista de clientes archivados */}
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl mt-6 mx-auto">
         <h2 className="text-xl font-semibold text-[#14213D] mb-4">Clientes Archivados</h2>
@@ -125,7 +123,7 @@ export default function Archivados() {
           </ul>
         )}
       </div>
-  
+
       {/* Modal de confirmación de cierre de sesión */}
       {isModalOpen && (
         <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
@@ -150,4 +148,4 @@ export default function Archivados() {
       )}
     </div>
   );
-}  
+}
