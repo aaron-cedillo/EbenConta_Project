@@ -26,6 +26,8 @@ export default function ContadorDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [alertaSeleccionada, setAlertaSeleccionada] = useState<Alerta | null>(null);
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   useEffect(() => {
     const storedUserName = getUserName();
     setUserName(storedUserName);
@@ -108,6 +110,8 @@ export default function ContadorDashboard() {
         },
       });
 
+      setIsDeleteModalOpen(false);
+      setAlertaSeleccionada(null);
       alert("Alerta eliminada correctamente");
 
       // Actualizar las alertas
@@ -121,6 +125,12 @@ export default function ContadorDashboard() {
       console.error("Error al eliminar alerta:", error);
       alert("Hubo un error al eliminar la alerta.");
     }
+  };
+
+  const confirmarEliminarAlerta = async () => {
+    if (!alertaSeleccionada) return; // Si no hay alerta seleccionada, salir
+  
+    await handleEliminarAlerta(alertaSeleccionada.AlertaID);
   };
 
   const handleEditarEstado = async (alertaID: number, nuevoEstado: string) => {
@@ -248,7 +258,6 @@ export default function ContadorDashboard() {
           </div>
 
           {/* Botón para agregar alerta */}
-          {/* Botón para agregar alerta */}
           <button
             onClick={handleAgregarAlerta}
             className="w-full px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
@@ -288,7 +297,10 @@ export default function ContadorDashboard() {
                         </span>
                       )}
                       <button
-                        onClick={() => handleEliminarAlerta(alerta.AlertaID)}
+                        onClick={() => {
+                          setAlertaSeleccionada(alerta);
+                          setIsDeleteModalOpen(true);
+                        }}
                         className="px-3 py-1 bg-[#D00000] text-white rounded-lg hover:bg-[#A00000] transition"
                       >
                         Eliminar
@@ -301,6 +313,33 @@ export default function ContadorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {isDeleteModalOpen && alertaSeleccionada && (
+        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
+            <h3 className="text-lg font-semibold text-[#14213D]">Confirmar Eliminación</h3>
+            <p className="mt-2 text-[#14213D]">
+              ¿Estás seguro de que deseas eliminar la alerta de <strong>{alertaSeleccionada.Tipo}</strong>
+              de <strong>{alertaSeleccionada.NombreClientes}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-4 flex justify-end gap-4">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEliminarAlerta}
+                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmación de edición */}
       {isEditModalOpen && alertaSeleccionada && (
@@ -328,29 +367,29 @@ export default function ContadorDashboard() {
           </div>
         </div>
       )}
-{/* Modal de confirmación de cierre de sesión */}
-{isModalOpen && (
-  <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
-    <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
-      <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
-      <p className="mt-2 text-[#14213D]">Se cerrará tu sesión y deberás volver a iniciar sesión para acceder.</p>
-      <div className="mt-4 flex justify-end gap-4">
-        <button
-          onClick={() => setIsModalOpen(false)}
-          className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
-        >
-          Confirmar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Modal de confirmación de cierre de sesión */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
+            <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
+            <p className="mt-2 text-[#14213D]">Se cerrará tu sesión y deberás volver a iniciar sesión para acceder.</p>
+            <div className="mt-4 flex justify-end gap-4">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
