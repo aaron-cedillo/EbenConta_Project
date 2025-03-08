@@ -243,7 +243,7 @@ const Clientes = () => {
             onClick={() => router.push('/ContadorDashboard')}
             className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] transition"
           >
-            Volver
+            Volver al menú
           </button>
           <button
             onClick={handleLogout}

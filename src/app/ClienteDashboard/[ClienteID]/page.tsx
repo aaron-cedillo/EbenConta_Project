@@ -143,25 +143,25 @@ const ClienteDashboard = () => {
     setFacturaID(facturaID); // Asignamos el ID de la factura directamente
     setNuevoEstatus(nuevoEstatus); // Asignamos el nuevo estatus seleccionado
     setShowModal(true); // Mostramos el modal de confirmación
-  };  
+  };
 
   const confirmEstatusChange = async () => {
     console.log("FacturaID:", FacturaID, "Nuevo Estatus:", nuevoEstatus);  // Verificar que los datos son correctos
     if (!FacturaID || !nuevoEstatus) return; // Validamos que tenemos el ID y el nuevo estatus
-  
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("Usuario no autenticado");
         return;
       }
-  
+
       await axios.put(
         `http://localhost:3001/api/facturas/${FacturaID}`,
         { Estatus: nuevoEstatus },
         { headers: { Authorization: `Bearer ${token}` } }
-      );      
-  
+      );
+
       // Actualizamos la lista de facturas después de la actualización
       fetchFacturas();
       alert("Estatus actualizado correctamente.");
@@ -173,10 +173,10 @@ const ClienteDashboard = () => {
       }
       alert("Error al actualizar el estatus.");
     }
-  
+
     setShowModal(false); // Cerrar el modal después de confirmar
   };
-  
+
   const cancelEstatusChange = () => {
     setShowModal(false); // Cerrar el modal sin realizar cambios
   };
@@ -194,34 +194,42 @@ const ClienteDashboard = () => {
   }, [fetchCliente, fetchFacturas]);
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
-      {/* Mensaje de bienvenida y botón de cerrar sesión en la misma línea */}
-      <div className="flex items-center justify-between w-full mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Bienvenido, {userName}</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition sm:w-auto"
-        >
-          Cerrar Sesión
-        </button>
+    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
+      {/* Encabezado */}
+      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
+        <h2 className="text-2xl font-semibold text-[#14213D]">{`Bienvenido, ${userName || "Cargando..."}`}</h2>
+        <div className="flex gap-4">
+          <button
+            onClick={() => router.push('/Clientes')}
+            className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition"
+          >
+            Volver
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
 
       {/* Modal de confirmación */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-semibold">Confirmar cierre de sesión</h2>
-            <p className="mt-2 text-gray-600">¿Estás seguro de que quieres cerrar sesión?</p>
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 border-2 border-[#FCA311]">
+            <h2 className="text-lg font-semibold text-[#14213D]">Confirmar cierre de sesión</h2>
+            <p className="mt-2 text-[#14213D]">¿Estás seguro de que quieres cerrar sesión?</p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
               >
                 Cerrar Sesión
               </button>
@@ -230,126 +238,127 @@ const ClienteDashboard = () => {
         </div>
       )}
 
-      {/* Botón de Volver */}
-      <button
-        onClick={() => router.push('/Clientes')}
-        className="mb-6 bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition"
-      >
-        Volver
-      </button>
+      {/* Información del Cliente */}
+      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-6 mt-6 text-black mx-auto flex flex-col items-center">
+        <h2 className="text-3xl font-bold text-[#14213D] mb-6 text-center">Información del Cliente</h2>
 
+        {error && <p className="text-red-500 text-center">{error}</p>}
 
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Información del Cliente</h2>
+        {cliente ? (
+          <div className="w-full">
+            <table className="w-full text-left border-collapse">
+              <tbody>
+                {[
+                  { label: "Nombre", value: cliente.Nombre },
+                  { label: "RFC", value: cliente.RFC },
+                  { label: "Correo", value: cliente.Correo },
+                  { label: "Teléfono", value: cliente.Telefono },
+                  { label: "Dirección", value: cliente.Direccion },
+                ].map(({ label, value }, index) => (
+                  <tr key={index} className={`${index % 2 === 0 ? "bg-gray-200" : ""} border-t`}>
+                    <td className="p-4 font-semibold text-center">{label}:</td>
+                    <td className="p-4 text-center">{value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-gray-600 text-center">Cargando información...</p>
+        )}
+      </div>
 
-      {error && <p className="text-red-500">{error}</p>}
-
-      {cliente ? (
-        <div className="w-full max-w-lg bg-white shadow-md rounded-lg overflow-hidden mb-8">
-          <table className="w-full text-left border-collapse">
-            <tbody>
-              <tr className="bg-gray-200">
-                <td className="p-4 font-semibold text-gray-800">Nombre:</td>
-                <td className="p-4 text-gray-800">{cliente.Nombre}</td>
-              </tr>
-              <tr className="border-t">
-                <td className="p-4 font-semibold text-gray-800">RFC:</td>
-                <td className="p-4 text-gray-800">{cliente.RFC}</td>
-              </tr>
-              <tr className="bg-gray-200 border-t">
-                <td className="p-4 font-semibold text-gray-800">Correo:</td>
-                <td className="p-4 text-gray-800">{cliente.Correo}</td>
-              </tr>
-              <tr className="border-t">
-                <td className="p-4 font-semibold text-gray-800">Teléfono:</td>
-                <td className="p-4 text-gray-800">{cliente.Telefono}</td>
-              </tr>
-              <tr className="bg-gray-200 border-t">
-                <td className="p-4 font-semibold text-gray-800">Dirección:</td>
-                <td className="p-4 text-gray-800">{cliente.Direccion}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-gray-600">Cargando información...</p>
-      )}
-
-      <div className="w-full max-w-lg bg-white p-6 shadow-md rounded-lg mb-8">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Subir Factura (XML)</h3>
-        <form onSubmit={handleUploadFactura} className="space-y-4">
-          <input type="file" accept=".xml" onChange={handleFileChange} className="w-full p-2 border rounded" required />
-          <button type="submit" className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 transition">
+      {/* Subir Factura */}
+      <div className="w-full max-w-3xl bg-white p-6 shadow-lg rounded-lg mt-6 mx-auto flex flex-col items-center">
+        <h3 className="text-xl font-semibold text-[#14213D] mb-4 text-center">Subir Factura (XML)</h3>
+        <form onSubmit={handleUploadFactura} className="space-y-4 w-full flex flex-col items-center">
+          <input
+            type="file"
+            accept=".xml"
+            onChange={handleFileChange}
+            className="w-full p-2 border border-gray-300 rounded text-black"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full bg-[#4CAF50] text-white p-2 rounded hover:bg-[#388E3C] transition"
+          >
             Subir Factura
           </button>
         </form>
       </div>
 
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Facturas del Cliente</h2>
+      {/* Facturas del Cliente */}
+      <div className="w-full max-w-6xl bg-white shadow-lg rounded-lg overflow-hidden mt-6 mx-auto text-center">
+        <h2 className="text-2xl font-bold text-[#14213D] mb-4">Facturas del Cliente</h2>
 
-      {facturas.length > 0 ? (
-        <div className="w-full max-w-4xl bg-white shadow-md rounded-lg overflow-hidden">
-          <table className="w-full border-collapse">
-            <thead className="bg-blue-500 text-white">
-              <tr>
-                <th className="p-3 text-left">RFC Emisor</th>
-                <th className="p-3 text-left">RFC Receptor</th>
-                <th className="p-3 text-left">Total</th>
-                <th className="p-3 text-left">Tipo</th>
-                <th className="p-3 text-left">UUID</th>
-                <th className="p-3 text-left">Fecha Emisión</th>
-                <th className="p-3 text-left">Folio</th>
-                <th className="p-3 text-left">Estatus</th>
-                <th className="p-3 text-left">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {facturas.map((factura) => (
-                <tr key={factura.FacturaID} className="border-t">
-                  <td className="p-3">{factura.RFCEmisor}</td>
-                  <td className="p-3">{factura.RFCReceptor}</td>
-                  <td className="p-3">${factura.Total.toFixed(2)}</td>
-                  <td className="p-3">{factura.Tipo}</td>
-                  <td className="p-3">{factura.UUID}</td>
-                  <td className="p-3">{new Date(factura.FechaEmision).toLocaleDateString()}</td>
-                  <td className="p-3">{factura.Folio}</td>
-                  <td className={`p-3 font-semibold ${factura.Estatus === "Cancelada" ? "text-red-500" : "text-green-600"}`}>
-                    {factura.Estatus}
-                  </td>
-                  <td className="p-3">
-                    <select
-                      value={factura.Estatus}
-                      onChange={(e) => handleEstatusChange(factura.FacturaID, e.target.value)}
-                      className="border p-2 rounded"
-                    >
-                      <option value="Activa">Activa</option>
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Cancelada">Cancelada</option>
-                    </select>
-                  </td>
+        {facturas.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-black mx-auto">
+              <thead className="bg-[#FCA311] text-white">
+                <tr>
+                  {["RFC Emisor", "RFC Receptor", "Total", "Tipo", "UUID", "Fecha Emisión", "Folio", "Estatus", "Acción"].map((header, index) => (
+                    <th key={index} className="p-3 text-left">{header}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-gray-600">Este cliente no tiene facturas registradas.</p>
-      )}
+              </thead>
+              <tbody>
+                {facturas.map((factura) => (
+                  <tr key={factura.FacturaID} className="border-t hover:bg-gray-100 transition">
+                    <td className="p-3">{factura.RFCEmisor}</td>
+                    <td className="p-3">{factura.RFCReceptor}</td>
+                    <td className="p-3">${factura.Total.toFixed(2)}</td>
+                    <td className="p-3">{factura.Tipo}</td>
+                    <td className="p-3">{factura.UUID}</td>
+                    <td className="p-3">{new Date(factura.FechaEmision).toLocaleDateString()}</td>
+                    <td className="p-3">{factura.Folio}</td>
+                    <td
+                      className={`p-3 font-semibold ${factura.Estatus === "Cancelada"
+                          ? "text-red-600"
+                          : factura.Estatus === "Pendiente"
+                            ? "text-yellow-600"
+                            : "text-green-600"
+                        }`}
+                    >
+                      {factura.Estatus}
+                    </td>
+                    <td className="p-3">
+                      <select
+                        value={factura.Estatus}
+                        onChange={(e) => handleEstatusChange(factura.FacturaID, e.target.value)}
+                        className="border p-2 rounded"
+                      >
+                        <option value="Activa">Activa</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Cancelada">Cancelada</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-black text-center p-4">Este cliente no tiene facturas registradas.</p>
+        )}
+      </div>
 
+      {/* Modal de confirmación de cambio de estatus */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-md w-1/3">
-            <h3 className="text-xl font-semibold mb-4">Confirmar cambio de estatus</h3>
-            <p>¿Estás seguro de cambiar el estatus de esta factura?</p>
+          <div className="bg-white p-6 rounded-lg shadow-md w-96 border-2 border-[#FCA311]">
+            <h3 className="text-xl font-semibold text-[#14213D] mb-4">Confirmar cambio de estatus</h3>
+            <p className="text-[#14213D]">¿Estás seguro de cambiar el estatus de esta factura?</p>
             <div className="flex justify-between mt-6">
               <button
                 onClick={confirmEstatusChange}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+                className="bg-[#4CAF50] text-white px-4 py-2 rounded hover:bg-[#388E3C] transition"
               >
                 Sí, cambiar
               </button>
               <button
                 onClick={cancelEstatusChange}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+                className="bg-[#D62828] text-white px-4 py-2 rounded hover:bg-[#A12020] transition"
               >
                 No, cancelar
               </button>
