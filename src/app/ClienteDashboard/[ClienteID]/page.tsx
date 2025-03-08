@@ -349,18 +349,18 @@ const ClienteDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow-md w-96 border-2 border-[#FCA311]">
             <h3 className="text-xl font-semibold text-[#14213D] mb-4">Confirmar cambio de estatus</h3>
             <p className="text-[#14213D]">¿Estás seguro de cambiar el estatus de esta factura?</p>
-            <div className="flex justify-between mt-6">
-              <button
-                onClick={confirmEstatusChange}
-                className="bg-[#4CAF50] text-white px-4 py-2 rounded hover:bg-[#388E3C] transition"
-              >
-                Sí, cambiar
-              </button>
+            <div className="flex justify-between mt-6"> 
               <button
                 onClick={cancelEstatusChange}
                 className="bg-[#D62828] text-white px-4 py-2 rounded hover:bg-[#A12020] transition"
               >
                 No, cancelar
+              </button>
+              <button
+                onClick={confirmEstatusChange}
+                className="bg-[#4CAF50] text-white px-4 py-2 rounded hover:bg-[#388E3C] transition"
+              >
+                Sí, cambiar
               </button>
             </div>
           </div>
