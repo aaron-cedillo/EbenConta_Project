@@ -138,81 +138,122 @@ export default function IngresosEgresos() {
   }, [fetchResumenFacturas, ClienteID]);
 
   return (
-    <div className="p-6 bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
       {/* Encabezado */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">{`Bienvenido, ${userName || "Cargando..."}`}</h2>
+      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
+        <h2 className="text-2xl font-semibold text-[#14213D]">{`Bienvenido, ${userName || "Cargando..."}`}</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition w-full sm:w-auto"
+          className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
         >
           Cerrar Sesión
         </button>
       </div>
-
-      <button onClick={() => router.push("/Ingresos-Egresos")} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md">
-        Volver al Dashboard de Ingresos y Egresos
-      </button>
-
-      {/* Filtro por fecha */}
-      <div className="mt-4">
-        <label>Fecha Inicio:</label>
-        <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
-        <label className="ml-4">Fecha Fin:</label>
-        <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
-        <button onClick={fetchResumenFacturas} className="ml-4 bg-green-600 text-white px-4 py-2 rounded-md">
-          Filtrar
+  
+      {/* Botón de navegación */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={() => router.push("/Ingresos-Egresos")}
+          className="px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
+        >
+          Volver al menu de Ingresos y Egresos
         </button>
       </div>
-
+  
+      {/* Filtro por fecha */}
+      <div className="mt-4 bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+        <h2 className="text-lg font-semibold text-[#14213D] mb-4">Filtrar por Fecha</h2>
+        <div className="flex items-center gap-4">
+          <div>
+            <label className="block text-[#14213D] font-medium">Fecha Inicio:</label>
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
+            />
+          </div>
+          <div>
+            <label className="block text-[#14213D] font-medium">Fecha Fin:</label>
+            <input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
+            />
+          </div>
+          <button
+            onClick={fetchResumenFacturas}
+            className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C] transition"
+          >
+            Filtrar
+          </button>
+        </div>
+      </div>
+  
       {/* Botón de exportar a Excel */}
-      <button onClick={exportarAExcel} className="mt-4 bg-green-600 text-white px-4 py-2 rounded-md">
-        Exportar a Excel
-      </button>
-
+      <div className="flex justify-center mt-4">
+        <button
+          onClick={exportarAExcel}
+          className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition"
+        >
+          Exportar a Excel
+        </button>
+      </div>
+  
       {/* Tabla de Facturas */}
-      <table className="mt-6 w-full bg-white">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Monto</th>
-            <th>Tipo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {facturas.length === 0 ? (
-            <tr>
-              <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
-                No se encontraron facturas.
-              </td>
+      <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+        <h2 className="text-xl font-semibold text-[#14213D] mb-4">Facturas</h2>
+        <table className="w-full table-auto border-collapse rounded-lg shadow-lg">
+          <thead>
+            <tr className="bg-[#FCA311] text-white">
+              <th className="py-2 px-4">Fecha</th>
+              <th className="py-2 px-4">Monto</th>
+              <th className="py-2 px-4">Tipo</th>
             </tr>
-          ) : (
-            facturas.map((factura, index) => (
-              <tr key={index}>
-                <td>{factura.Fecha}</td>
-                <td>{factura.Total !== undefined ? factura.Total.toFixed(2) : "0.00"}</td>
-                <td>{factura.Tipo === "I" ? "Ingreso" : "Egreso"}</td>
+          </thead>
+          <tbody>
+            {facturas.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
+                  No se encontraron facturas.
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              facturas.map((factura, index) => (
+                <tr key={index} className="border-b hover:bg-gray-100 transition">
+                  <td className="py-2 px-4 text-[#14213D]">{factura.Fecha}</td>
+                  <td className="py-2 px-4 text-[#14213D]">
+                    {factura.Total !== undefined ? factura.Total.toFixed(2) : "0.00"}
+                  </td>
+                  <td className={`py-2 px-4 font-semibold ${
+                    factura.Tipo === "I" ? "text-green-600" : "text-red-600"
+                  }`}>
+                    {factura.Tipo === "I" ? "Ingreso" : "Egreso"}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+  
       {/* Totales de Ingresos y Egresos */}
-      <div className="mt-6 flex justify-between text-sm font-semibold text-gray-700">
+      <div className="mt-6 flex justify-between text-lg font-semibold text-white max-w-4xl mx-auto bg-[#FCA311] p-4 rounded-lg shadow-md">
         <p>Total Ingresos: ${totalIngreso.toFixed(2)}</p>
         <p>Total Egresos: ${totalEgreso.toFixed(2)}</p>
       </div>
-
+  
       {/* Modal de confirmación de cierre de sesión */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-semibold">Confirmar cierre de sesión</h2>
-            <p className="mt-2 text-gray-600">¿Estás seguro de que quieres cerrar sesión?</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-[#14213D] bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 border-2 border-[#FCA311]">
+            <h2 className="text-lg font-semibold text-[#14213D]">Confirmar cierre de sesión</h2>
+            <p className="mt-2 text-[#14213D]">¿Estás seguro de que quieres cerrar sesión?</p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
               >
                 Cancelar
               </button>
@@ -221,7 +262,7 @@ export default function IngresosEgresos() {
                   setIsModalOpen(false);
                   router.push("/login");
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
               >
                 Cerrar Sesión
               </button>
@@ -231,4 +272,4 @@ export default function IngresosEgresos() {
       )}
     </div>
   );
-}
+}  
