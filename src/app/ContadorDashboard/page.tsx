@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { logoutUser, getUserName } from "@/app/services/authService";
 import axios from "axios";
+import { FaUser, FaFolderOpen, FaDollarSign } from "react-icons/fa";
 
 interface Alerta {
   AlertaID: number;
@@ -15,22 +16,30 @@ interface Alerta {
 export default function ContadorDashboard() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [alertas, setAlertas] = useState<Alerta[]>([]);
-  const [clienteNombre, setClienteNombre] = useState("");  // Nueva variable para el nombre manual
+  const [clienteNombre, setClienteNombre] = useState("");
   const [tipo, setTipo] = useState("");
   const [fechaVencimiento, setFechaVencimiento] = useState("");
   const [estado, setEstado] = useState("Pendiente");
+  const [alertaSeleccionada, setAlertaSeleccionada] = useState<number | null>(null);
 
-  // Estado para el modal de confirmación de edición
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [alertaSeleccionada, setAlertaSeleccionada] = useState<Alerta | null>(null);
-
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const storedUserName = getUserName();
     setUserName(storedUserName);
+    obtenerAlertas();
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsModalOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogout = () => {
@@ -38,25 +47,17 @@ export default function ContadorDashboard() {
     router.push("/login");
   };
 
-  // Función para obtener las alertas
   const obtenerAlertas = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get('http://localhost:3001/api/alertas', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axios.get("http://localhost:3001/api/alertas", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setAlertas(response.data);  // Actualiza el estado con las alertas
+      setAlertas(response.data);
     } catch (error) {
       console.error("Error al obtener las alertas", error);
     }
   };
-
-  // Llama a obtenerAlertas cuando el componente se monta
-  useEffect(() => {
-    obtenerAlertas();
-  }, []);
 
   const handleAgregarAlerta = async () => {
     if (!clienteNombre || !tipo || !fechaVencimiento) {
@@ -68,32 +69,16 @@ export default function ContadorDashboard() {
       const token = localStorage.getItem("token");
       await axios.post(
         "http://localhost:3001/api/alertas",
-        {
-          NombreClientes: clienteNombre, // Usamos el nombre manual del cliente
-          Tipo: tipo,
-          FechaVencimiento: fechaVencimiento,
-          Estado: estado,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { NombreClientes: clienteNombre, Tipo: tipo, FechaVencimiento: fechaVencimiento, Estado: estado },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       alert("Alerta agregada correctamente");
-      setClienteNombre("");  // Limpiar el campo de nombre
+      setClienteNombre("");
       setTipo("");
       setFechaVencimiento("");
       setEstado("Pendiente");
-
-      // Actualizar las alertas
-      const res = await axios.get("http://localhost:3001/api/alertas", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setAlertas(res.data);
+      obtenerAlertas();
     } catch (error) {
       console.error("Error al agregar alerta:", error);
       alert("Hubo un error al agregar la alerta.");
@@ -101,265 +86,198 @@ export default function ContadorDashboard() {
   };
 
   const handleEliminarAlerta = async (alertaID: number) => {
-    const token = localStorage.getItem("token");
-
     try {
+      const token = localStorage.getItem("token");
       await axios.delete(`http://localhost:3001/api/alertas/${alertaID}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setIsDeleteModalOpen(false);
-      setAlertaSeleccionada(null);
-      alert("Alerta eliminada correctamente");
-
-      // Actualizar las alertas
-      const res = await axios.get("http://localhost:3001/api/alertas", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setAlertas(res.data);
+      alert("Alerta eliminada correctamente.");
+      obtenerAlertas(); // Recargar las alertas
     } catch (error) {
       console.error("Error al eliminar alerta:", error);
       alert("Hubo un error al eliminar la alerta.");
     }
   };
 
-  const confirmarEliminarAlerta = async () => {
-    if (!alertaSeleccionada) return; // Si no hay alerta seleccionada, salir
-  
-    await handleEliminarAlerta(alertaSeleccionada.AlertaID);
-  };
-
-  const handleEditarEstado = async (alertaID: number, nuevoEstado: string) => {
-    const token = localStorage.getItem("token");
+  const handleCambiarEstado = async (alertaID: number | null) => {
+    if (!alertaID) return; // Evita errores si no hay alerta seleccionada
 
     try {
+      const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:3001/api/alertas/${alertaID}/estado`, // CORREGIDA
-        { Estado: nuevoEstado },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `http://localhost:3001/api/alertas/${alertaID}/estado`,
+        { Estado: "Atendida" }, // Nuevo estado
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert("Estado de alerta actualizado");
-      setIsEditModalOpen(false);
-      setAlertaSeleccionada(null);
-
-      // Actualizar la lista de alertas
-      const res = await axios.get("http://localhost:3001/api/alertas", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setAlertas(res.data);
+      alert("Estado de alerta actualizado.");
+      obtenerAlertas(); // Recargar las alertas
     } catch (error) {
-      console.error("Error al editar estado de alerta:", error);
+      console.error("Error al cambiar el estado de la alerta:", error);
       alert("Hubo un error al actualizar el estado de la alerta.");
     }
   };
 
-  if (!userName) {
-    return <div className="flex items-center justify-center min-h-screen text-xl">Cargando...</div>;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
-      {/* Encabezado */}
-      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
-        <h1 className="text-2xl font-semibold text-[#14213D]">Bienvenido, {userName}</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
-        >
-          Cerrar Sesión
-        </button>
-      </div>
-
-      {/* Botones de navegación */}
-      <div className="flex justify-center gap-6 mt-6">
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="w-64 bg-[#14213D] text-white p-6 flex flex-col">
+        <h1 className="text-2xl font-bold mb-6">
+          eben<span className="text-[#FCA311]">Conta</span>
+        </h1>
         <button
           onClick={() => router.push("/Clientes")}
-          className="px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
         >
+          <FaUser />
           Clientes
         </button>
         <button
           onClick={() => router.push("/Ingresos-Egresos")}
-          className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C] transition"
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
         >
-          Ingresos y Egresos
+          <FaDollarSign />
+          Ingresos
         </button>
         <button
           onClick={() => router.push("/archivados")}
-          className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#495057] transition"
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
         >
+          <FaFolderOpen />
           Archivados
         </button>
       </div>
 
       {/* Contenido principal */}
-      <div className="flex flex-col items-center mt-6 gap-6">
-        {/* Formulario para agregar alertas */}
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
-          <h2 className="text-xl font-semibold text-[#14213D] mb-4">Agregar Alerta</h2>
-
-          {/* Nombre del Cliente */}
-          <div className="mb-4">
-            <label className="block text-[#14213D] font-medium">Nombre del Cliente</label>
-            <input
-              type="text"
-              value={clienteNombre}
-              onChange={(e) => setClienteNombre(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
-              placeholder="Ejemplo: Juan Pérez"
-            />
+      <div className="flex-1 p-8">
+        {/* Encabezado */}
+        <div className="flex justify-between items-center bg-white p-4 shadow rounded-lg">
+          <h2 className="text-2xl font-bold text-[#14213D]">Dashboard</h2>
+          <div className="relative flex items-center gap-4">
+            <p className="text-lg font-semibold text-[#14213D]">{userName}</p>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsModalOpen(!isModalOpen)}
+                className="w-10 h-10 flex items-center justify-center bg-gray-300 rounded-full"
+              >
+                <FaUser size={20} />
+              </button>
+              {isModalOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white shadow-md rounded-lg p-2">
+                  <button
+                    onClick={() => setShowLogoutModal(true)}
+                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-200 rounded-lg"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-
-          {/* Tipo de Alerta */}
-          <div className="mb-4">
-            <label className="block text-[#14213D] font-medium">Tipo de Alerta</label>
-            <input
-              type="text"
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
-              placeholder="Ejemplo: Vencimiento Impuestos"
-            />
-          </div>
-
-          {/* Fecha de Vencimiento */}
-          <div className="mb-4">
-            <label className="block text-[#14213D] font-medium">Fecha de Vencimiento</label>
-            <input
-              type="date"
-              value={fechaVencimiento}
-              onChange={(e) => setFechaVencimiento(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
-            />
-          </div>
-
-          {/* Estado de la Alerta */}
-          <div className="mb-4">
-            <label className="block text-[#14213D] font-medium">Estado</label>
-            <select
-              value={estado}
-              onChange={(e) => setEstado(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
-            >
-              <option value="Pendiente">Pendiente</option>
-              <option value="Atendida">Atendida</option>
-            </select>
-          </div>
-
-          {/* Botón para agregar alerta */}
-          <button
-            onClick={handleAgregarAlerta}
-            className="w-full px-4 py-2 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
-          >
-            Agregar Alerta
-          </button>
         </div>
 
-        {/* Mostrar alertas */}
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl mt-6">
-          <h2 className="text-xl font-semibold text-[#14213D] mb-4">Mis Alertas</h2>
-          <div>
-            {alertas.length === 0 ? (
-              <p className="text-gray-500">No tienes alertas creadas.</p>
-            ) : (
-              <ul>
-                {alertas.map((alerta) => (
-                  <li key={alerta.AlertaID} className="flex justify-between items-center py-2 border-b">
-                    <div className="text-[#14213D]">
-                      <strong>{alerta.Tipo}</strong> - {alerta.NombreClientes} <br />
-                      <span className="text-gray-500">Fecha de vencimiento: {alerta.FechaVencimiento}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {alerta.Estado === "Pendiente" ? (
-                        <button
-                          onClick={() => {
-                            setAlertaSeleccionada(alerta);
-                            setIsEditModalOpen(true);
-                          }}
-                          className="px-3 py-1 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
-                        >
-                          Pendiente
-                        </button>
-                      ) : (
-                        <span className="px-3 py-1 bg-[#2D6A4F] text-white rounded-lg">
-                          Atendida
-                        </span>
-                      )}
+        {/* Notificaciones y formulario */}
+        <div className="grid grid-cols-3 gap-6 mt-6">
+          {/* Notificaciones */}
+          <div className="col-span-2 bg-white p-6 rounded-lg shadow">
+            <h3 className="text-xl font-bold text-[#14213D] mb-4">Notificaciones</h3>
+            <ul className="space-y-4">
+              {alertas.map((alerta) => (
+                <li key={alerta.AlertaID} className="border-b pb-4 flex justify-between items-center">
+                  <div>
+                    <p className="text-[#14213D] font-semibold">{alerta.Tipo}</p>
+                    <p className="text-gray-500">{alerta.NombreClientes}</p>
+                    <p className="text-gray-500">Fecha: {alerta.FechaVencimiento}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {/* Botón para marcar como atendida */}
+                    {alerta.Estado === "Pendiente" ? (
                       <button
-                        onClick={() => {
-                          setAlertaSeleccionada(alerta);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        className="px-3 py-1 bg-[#D00000] text-white rounded-lg hover:bg-[#A00000] transition"
+                        onClick={() => setAlertaSeleccionada(alerta.AlertaID)}
+                        className="px-3 py-1 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
                       >
-                        Eliminar
+                        Marcar como Atendida
                       </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+                    ) : (
+                      <span className="px-3 py-1 bg-[#2D6A4F] text-white rounded-lg">
+                        Atendida
+                      </span>
+                    )}
+
+                    {/* Botón para eliminar la alerta */}
+                    <button
+                      onClick={() => handleEliminarAlerta(alerta.AlertaID)}
+                      className="px-3 py-1 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Formulario de alerta */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-xl font-bold text-[#14213D] mb-4">Agregar notificación</h3>
+            <div className="mb-4">
+              <label className="block font-medium text-[#14213D]">Cliente</label>
+              <input
+                type="text"
+                value={clienteNombre}
+                onChange={(e) => setClienteNombre(e.target.value)}
+                className="w-full p-2 border rounded text-black"
+                placeholder="Ej: Juan Pérez"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block font-medium text-[#14213D]">Tipo de alerta</label>
+              <input
+                type="text"
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                className="w-full p-2 border rounded text-black"
+                placeholder="Ej: Vencimiento de impuestos"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block font-medium text-[#14213D]">Fecha de vencimiento</label>
+              <input
+                type="date"
+                value={fechaVencimiento}
+                onChange={(e) => setFechaVencimiento(e.target.value)}
+                className="w-full p-2 border rounded text-black"
+              />
+            </div>
+            <button
+              onClick={handleAgregarAlerta}
+              className="w-full bg-[#FCA311] text-white py-2 rounded-lg hover:bg-[#E08E00] transition"
+            >
+              Agregar
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Modal de confirmación de eliminación */}
-      {isDeleteModalOpen && alertaSeleccionada && (
-        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
-            <h3 className="text-lg font-semibold text-[#14213D]">Confirmar Eliminación</h3>
-            <p className="mt-2 text-[#14213D]">
-              ¿Estás seguro de que deseas eliminar la alerta de <strong>{alertaSeleccionada.Tipo}</strong>
-              de <strong>{alertaSeleccionada.NombreClientes}</strong>? Esta acción no se puede deshacer.
-            </p>
+      {/* Modal de confirmación para marcar alerta como atendida */}
+      {alertaSeleccionada && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-96">
+            <h3 className="text-lg font-semibold text-[#14213D]">¿Marcar alerta como atendida?</h3>
+            <p className="mt-2 text-[#14213D]">Esta alerta cambiará su estado a &quot;Atendida&quot;.</p>
             <div className="mt-4 flex justify-end gap-4">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
-              >
+              <button onClick={() => setAlertaSeleccionada(null)} className="px-4 py-2 bg-gray-400 text-white rounded">
                 Cancelar
               </button>
               <button
-                onClick={confirmarEliminarAlerta}
-                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de confirmación de edición */}
-      {isEditModalOpen && alertaSeleccionada && (
-        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
-            <h3 className="text-lg font-semibold text-[#14213D]">Confirmar Cambio de Estado</h3>
-            <p className="mt-2 text-[#14213D]">
-              ¿Estás seguro de que deseas marcar la alerta de <strong>{alertaSeleccionada.Tipo}</strong>
-              de <strong>{alertaSeleccionada.NombreClientes}</strong> como &quot;Atendida&quot;?
-            </p>
-            <div className="mt-4 flex justify-end gap-4">
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleEditarEstado(alertaSeleccionada.AlertaID, "Atendida")}
-                className="px-4 py-2 bg-[#2D6A4F] text-white rounded-lg hover:bg-[#1B4332] transition"
+                onClick={() => {
+                  if (alertaSeleccionada !== null) {
+                    handleCambiarEstado(alertaSeleccionada);
+                    setAlertaSeleccionada(null);
+                  }
+                }}
+                className="px-4 py-2 bg-green-500 text-white rounded"
               >
                 Confirmar
               </button>
@@ -367,23 +285,17 @@ export default function ContadorDashboard() {
           </div>
         </div>
       )}
+
       {/* Modal de confirmación de cierre de sesión */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex justify-center items-center bg-[#14213D] bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-lg border-2 border-[#FCA311]">
+      {showLogoutModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-96">
             <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
-            <p className="mt-2 text-[#14213D]">Se cerrará tu sesión y deberás volver a iniciar sesión para acceder.</p>
             <div className="mt-4 flex justify-end gap-4">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
-              >
+              <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 bg-gray-400 text-white rounded">
                 Cancelar
               </button>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
-              >
+              <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded">
                 Confirmar
               </button>
             </div>
@@ -392,4 +304,4 @@ export default function ContadorDashboard() {
       )}
     </div>
   );
-} 
+}
