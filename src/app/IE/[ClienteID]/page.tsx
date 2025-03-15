@@ -111,36 +111,50 @@ export default function IngresosEgresos() {
 
   const exportarAExcel = (tipo?: "I" | "E") => {
     let datosAExportar = facturas;
-
+  
     if (tipo) {
       datosAExportar = facturas.filter((factura) => factura.Tipo === tipo);
     }
-
+  
     if (datosAExportar.length === 0) {
       console.error("No hay facturas para exportar.");
       return;
     }
-
-    const worksheet = XLSX.utils.json_to_sheet(
-      datosAExportar.map((factura) => ({
-        Fecha: factura.Fecha,
-        Monto: factura.Total.toFixed(2),
-        Tipo: factura.Tipo === "I" ? "Ingreso" : "Egreso",
-      }))
-    );
-
+  
+    const worksheetData = [
+      ["Fecha", "Monto", "Tipo"], // Encabezados
+      ...datosAExportar.map((factura) => [
+        factura.Fecha,
+        factura.Total,
+        factura.Tipo === "I" ? "Ingreso" : "Egreso",
+      ]),
+      [],
+      ["", "Total:", datosAExportar.reduce((sum, factura) => sum + factura.Total, 0)], // Total en la última fila
+    ];
+  
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  
+    // Ajustar el ancho de columnas para mejor visibilidad
+    worksheet["!cols"] = [
+      { wch: 15 }, // Fecha
+      { wch: 15 }, // Monto
+      { wch: 15 }, // Tipo
+    ];
+  
+    // Crear libro y agregar la hoja
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Facturas");
-
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Resumen");
+  
+    // Nombre del archivo según tipo de exportación
     let fileName = `facturas_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
     if (tipo === "I") {
       fileName = `ingresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
     } else if (tipo === "E") {
       fileName = `egresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
     }
-
+  
     XLSX.writeFile(workbook, fileName);
-  };
+  };  
 
   useEffect(() => {
     if (ClienteID) {
@@ -204,7 +218,7 @@ export default function IngresosEgresos() {
       <div className="flex justify-center gap-4 mt-4">
         <button
           onClick={() => exportarAExcel("I")}
-          className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition"
+          className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition"
         >
           Exportar Ingresos
         </button>
@@ -216,7 +230,7 @@ export default function IngresosEgresos() {
         </button>
         <button
           onClick={() => exportarAExcel()}
-          className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition"
+          className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition"
         >
           Exportar Todos
         </button>
