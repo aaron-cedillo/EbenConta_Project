@@ -180,27 +180,27 @@ export default function ContadorDashboard() {
         {/* Notificaciones y formulario */}
         <div className="grid grid-cols-3 gap-6 mt-6">
           {/* Notificaciones */}
-          <div className="col-span-2 bg-white p-6 rounded-lg shadow">
-            <h3 className="text-xl font-bold text-[#14213D] mb-4">Notificaciones</h3>
-            <ul className="space-y-4">
+          <div className="col-span-2 bg-white p-6 rounded-2xl shadow-lg">
+            <h3 className="text-2xl font-bold text-[#14213D] mb-4">Notificaciones</h3>
+            <ul className="space-y-6">
               {alertas.map((alerta) => (
-                <li key={alerta.AlertaID} className="border-b pb-4 flex justify-between items-center">
+                <li key={alerta.AlertaID} className="flex items-center justify-between bg-[#F8F9FA] p-4 rounded-lg shadow-md">
                   <div>
-                    <p className="text-[#14213D] font-semibold">{alerta.Tipo}</p>
-                    <p className="text-gray-500">{alerta.NombreClientes}</p>
-                    <p className="text-gray-500">Fecha: {alerta.FechaVencimiento}</p>
+                    <p className="text-[#14213D] font-semibold text-lg">{alerta.Tipo}</p>
+                    <p className="text-gray-500 text-sm">{alerta.NombreClientes}</p>
+                    <p className="text-gray-500 text-sm">Fecha: {new Date(alerta.FechaVencimiento).toLocaleDateString()}</p>
                   </div>
                   <div className="flex gap-2">
-                    {/* Botón para marcar como atendida */}
+                    {/* Botón para marcar como atendida o pendiente */}
                     {alerta.Estado === "Pendiente" ? (
                       <button
                         onClick={() => setAlertaSeleccionada(alerta.AlertaID)}
-                        className="px-3 py-1 bg-[#FCA311] text-white rounded-lg hover:bg-[#E08E00] transition"
+                        className="px-4 py-2 bg-[#FCA311] text-white font-medium rounded-lg hover:bg-[#E08E00] transition"
                       >
                         Marcar como Atendida
                       </button>
                     ) : (
-                      <span className="px-3 py-1 bg-[#2D6A4F] text-white rounded-lg">
+                      <span className="px-4 py-2 bg-[#2D6A4F] text-white font-medium rounded-lg">
                         Atendida
                       </span>
                     )}
@@ -208,7 +208,7 @@ export default function ContadorDashboard() {
                     {/* Botón para eliminar la alerta */}
                     <button
                       onClick={() => handleEliminarAlerta(alerta.AlertaID)}
-                      className="px-3 py-1 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
+                      className="px-4 py-2 bg-[#D62828] text-white font-medium rounded-lg hover:bg-[#A12020] transition"
                     >
                       Eliminar
                     </button>
@@ -219,43 +219,56 @@ export default function ContadorDashboard() {
           </div>
 
           {/* Formulario de alerta */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-xl font-bold text-[#14213D] mb-4">Agregar notificación</h3>
-            <div className="mb-4">
-              <label className="block font-medium text-[#14213D]">Cliente</label>
-              <input
-                type="text"
-                value={clienteNombre}
-                onChange={(e) => setClienteNombre(e.target.value)}
-                className="w-full p-2 border rounded text-black"
-                placeholder="Ej: Juan Pérez"
-              />
+          <div className="bg-white rounded-lg shadow-md w-full max-w-sm border border-gray-300">
+            {/* Cabecera del formulario */}
+            <h3 className="text-xl font-bold text-white bg-[#14213D] p-4 rounded-t-lg">
+              Agregar notificación
+            </h3>
+            {/* Contenido del formulario */}
+            <div className="p-6">
+              {/* Cliente */}
+              <div className="mb-4">
+                <label className="block text-[#14213D] font-semibold">Cliente</label>
+                <input
+                  type="text"
+                  value={clienteNombre}
+                  onChange={(e) => setClienteNombre(e.target.value)}
+                  className="w-full p-3 border border-[#E5E7EB] rounded-md text-[#14213D] bg-white focus:ring-2 focus:ring-[#14213D] focus:outline-none"
+                  placeholder="Juan Pérez"
+                />
+              </div>
+
+              {/* Tipo de alerta */}
+              <div className="mb-4">
+                <label className="block text-[#14213D] font-semibold">Tipo de alerta</label>
+                <input
+                  type="text"
+                  value={tipo}
+                  onChange={(e) => setTipo(e.target.value)}
+                  className="w-full p-3 border border-[#E5E7EB] rounded-md text-[#14213D] bg-white focus:ring-2 focus:ring-[#14213D] focus:outline-none"
+                  placeholder="Vencimiento de impuesto"
+                />
+              </div>
+
+              {/* Fecha de vencimiento */}
+              <div className="mb-4">
+                <label className="block text-[#14213D] font-semibold">Fecha de vencimiento</label>
+                <input
+                  type="date"
+                  value={fechaVencimiento}
+                  onChange={(e) => setFechaVencimiento(e.target.value)}
+                  className="w-full p-3 border border-[#E5E7EB] rounded-md text-[#14213D] bg-white focus:ring-2 focus:ring-[#14213D] focus:outline-none"
+                />
+              </div>
+
+              {/* Botón Agregar */}
+              <button
+                onClick={handleAgregarAlerta}
+                className="w-full bg-[#FCA311] text-white font-semibold py-3 rounded-md hover:bg-[#E08E00] transition"
+              >
+                Agregar
+              </button>
             </div>
-            <div className="mb-4">
-              <label className="block font-medium text-[#14213D]">Tipo de alerta</label>
-              <input
-                type="text"
-                value={tipo}
-                onChange={(e) => setTipo(e.target.value)}
-                className="w-full p-2 border rounded text-black"
-                placeholder="Ej: Vencimiento de impuestos"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block font-medium text-[#14213D]">Fecha de vencimiento</label>
-              <input
-                type="date"
-                value={fechaVencimiento}
-                onChange={(e) => setFechaVencimiento(e.target.value)}
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-            <button
-              onClick={handleAgregarAlerta}
-              className="w-full bg-[#FCA311] text-white py-2 rounded-lg hover:bg-[#E08E00] transition"
-            >
-              Agregar
-            </button>
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ const LoginPage = () => {
       {/* Mensaje de bienvenida */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-white">
-          Bienvenido a <span className="text-white">Eben</span><span className="text-[#FCA311]">Conta</span>
+          Bienvenido a <span className="text-white">eben</span><span className="text-[#FCA311]">Conta</span>
         </h1>
       </div>
 
