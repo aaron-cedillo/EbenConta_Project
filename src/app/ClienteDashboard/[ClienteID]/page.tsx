@@ -4,7 +4,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import { AxiosError } from 'axios';
 import { logoutUser, getUserName } from "@/app/services/authService";
 
 interface Cliente {
@@ -37,7 +36,7 @@ const ClienteDashboard = () => {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [error, setError] = useState("");
-  const [xmlFile, setXmlFile] = useState<File | null>(null);
+  const [xmlFiles, setXmlFiles] = useState<File[]>([]);
   const [userName, setUserName] = useState<string | null>(null); // Estado para almacenar el nombre del usuario
 
   // Modal states
@@ -94,9 +93,8 @@ const ClienteDashboard = () => {
   }, [ClienteID]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setXmlFile(e.target.files[0]);
-    }
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setXmlFiles(files);
   };
 
   const handleUploadFactura = async (e: React.FormEvent) => {
@@ -107,35 +105,42 @@ const ClienteDashboard = () => {
       return;
     }
 
-    if (!xmlFile) {
-      alert("Selecciona un archivo XML.");
+    if (xmlFiles.length === 0) {
+      alert("Selecciona al menos un archivo XML.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("xml", xmlFile);
-    formData.append("ClienteID", ClienteID);  // Asegurar que se envía el ClienteID
-
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:3001/api/facturas/subir", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
 
-      alert("Factura subida exitosamente.");
-      setXmlFile(null);
+      for (const file of xmlFiles) {
+        const formData = new FormData();
+        formData.append("xml", file);
+        formData.append("ClienteID", ClienteID);
+
+        await axios.post("http://localhost:3001/api/facturas/subir", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      }
+
+      alert("Facturas subidas exitosamente.");
+
+      // Limpiar el estado de archivos seleccionados
+      setXmlFiles([]);
+
+      // Limpiar el input de archivos
+      const fileInput = document.getElementById("file-input") as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = "";  // Resetea el input
+      }
+
       fetchFacturas();
     } catch (err: unknown) {
-      if (err instanceof AxiosError) {
-        console.error("Error al subir la factura:", err.response?.data || err);
-        alert("Error al subir la factura: " + (err.response?.data?.error || "Desconocido"));
-      } else {
-        console.error("Error desconocido:", err);
-        alert("Error desconocido al subir la factura.");
-      }
+      console.error("Error al subir las facturas:", err);
+      alert("Error al subir las facturas.");
     }
   };
 
@@ -273,12 +278,26 @@ const ClienteDashboard = () => {
         <h3 className="text-xl font-semibold text-[#14213D] mb-4 text-center">Subir Factura (XML)</h3>
         <form onSubmit={handleUploadFactura} className="space-y-4 w-full flex flex-col items-center">
           <input
+            id="file-input"
             type="file"
             accept=".xml"
+            multiple
             onChange={handleFileChange}
             className="w-full p-2 border border-gray-300 rounded text-black"
-            required
           />
+
+          {/* Lista de archivos seleccionados */}
+          {xmlFiles.length > 0 && (
+            <div className="w-full p-2 border border-gray-300 rounded text-black bg-gray-100 mt-2">
+              <p className="font-semibold text-center">Archivos seleccionados:</p>
+              <ul className="list-disc list-inside">
+                {xmlFiles.map((file, index) => (
+                  <li key={index} className="text-black">{file.name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <button
             type="submit"
             className="w-full bg-[#4CAF50] text-white p-2 rounded hover:bg-[#388E3C] transition"
@@ -314,10 +333,10 @@ const ClienteDashboard = () => {
                     <td className="p-3">{factura.Folio}</td>
                     <td
                       className={`p-3 font-semibold ${factura.Estatus === "Cancelada"
-                          ? "text-red-600"
-                          : factura.Estatus === "Pendiente"
-                            ? "text-yellow-600"
-                            : "text-green-600"
+                        ? "text-red-600"
+                        : factura.Estatus === "Pendiente"
+                          ? "text-yellow-600"
+                          : "text-green-600"
                         }`}
                     >
                       {factura.Estatus}
@@ -349,7 +368,7 @@ const ClienteDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow-md w-96 border-2 border-[#FCA311]">
             <h3 className="text-xl font-semibold text-[#14213D] mb-4">Confirmar cambio de estatus</h3>
             <p className="text-[#14213D]">¿Estás seguro de cambiar el estatus de esta factura?</p>
-            <div className="flex justify-between mt-6"> 
+            <div className="flex justify-between mt-6">
               <button
                 onClick={cancelEstatusChange}
                 className="bg-[#D62828] text-white px-4 py-2 rounded hover:bg-[#A12020] transition"
