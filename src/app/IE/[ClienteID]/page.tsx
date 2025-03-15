@@ -109,14 +109,20 @@ export default function IngresosEgresos() {
   }, [ClienteID, fechaInicio, fechaFin]);
 
 
-  const exportarAExcel = () => {
-    if (facturas.length === 0) {
+  const exportarAExcel = (tipo?: "I" | "E") => {
+    let datosAExportar = facturas;
+
+    if (tipo) {
+      datosAExportar = facturas.filter((factura) => factura.Tipo === tipo);
+    }
+
+    if (datosAExportar.length === 0) {
       console.error("No hay facturas para exportar.");
       return;
     }
 
     const worksheet = XLSX.utils.json_to_sheet(
-      facturas.map((factura) => ({
+      datosAExportar.map((factura) => ({
         Fecha: factura.Fecha,
         Monto: factura.Total.toFixed(2),
         Tipo: factura.Tipo === "I" ? "Ingreso" : "Egreso",
@@ -126,8 +132,13 @@ export default function IngresosEgresos() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Facturas");
 
-    // Asegurar que el nombre no tenga espacios ni caracteres especiales
-    const fileName = `facturas_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
+    let fileName = `facturas_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
+    if (tipo === "I") {
+      fileName = `ingresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
+    } else if (tipo === "E") {
+      fileName = `egresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
+    }
+
     XLSX.writeFile(workbook, fileName);
   };
 
@@ -189,13 +200,25 @@ export default function IngresosEgresos() {
         </div>
       </div>
 
-      {/* Botón de exportar a Excel */}
-      <div className="flex justify-center mt-4">
+      {/* Botones de exportación */}
+      <div className="flex justify-center gap-4 mt-4">
         <button
-          onClick={exportarAExcel}
+          onClick={() => exportarAExcel("I")}
           className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition"
         >
-          Exportar a Excel
+          Exportar Ingresos
+        </button>
+        <button
+          onClick={() => exportarAExcel("E")}
+          className="px-6 py-3 bg-[#D62828] text-white font-semibold rounded-lg hover:bg-[#A12020] transition"
+        >
+          Exportar Egresos
+        </button>
+        <button
+          onClick={() => exportarAExcel()}
+          className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition"
+        >
+          Exportar Todos
         </button>
       </div>
 
@@ -249,7 +272,7 @@ export default function IngresosEgresos() {
           <p className="text-2xl font-bold mt-2">${totalEgreso.toFixed(2)}</p>
         </div>
       </div>
-      
+
       {/* Modal de confirmación de cierre de sesión */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#14213D] bg-opacity-50">
