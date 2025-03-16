@@ -265,7 +265,7 @@ const ClienteDashboard = () => {
 
           {/* Mostrar archivos seleccionados */}
           {xmlFiles.length > 0 && (
-            <div className="mt-2 p-2 bg-gray-100 border rounded">
+            <div className="mt-2 p-2 bg-gray-100 border rounded text-[#14213D]">
               <p className="text-sm font-semibold">Archivos seleccionados:</p>
               <ul className="list-disc ml-4 text-sm">
                 {xmlFiles.map((file, index) => (
