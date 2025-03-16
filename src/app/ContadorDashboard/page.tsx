@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { logoutUser, getUserName } from "@/app/services/authService";
 import axios from "axios";
-import { FaUser, FaFolderOpen, FaDollarSign } from "react-icons/fa";
+import { FaHome, FaUser, FaFolderOpen, FaDollarSign } from "react-icons/fa";
 
 interface Alerta {
   AlertaID: number;
@@ -155,6 +155,17 @@ export default function ContadorDashboard() {
         <h1 className="text-2xl font-bold mb-6">
           eben<span className="text-[#FCA311]">Conta</span>
         </h1>
+
+        {/* Botón Dashboard */}
+        <button
+          onClick={() => router.push("/ContadorDashboard")}
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
+        >
+          <FaHome />
+          Dashboard
+        </button>
+
+        {/* Botón Clientes */}
         <button
           onClick={() => router.push("/Clientes")}
           className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
@@ -162,6 +173,8 @@ export default function ContadorDashboard() {
           <FaUser />
           Clientes
         </button>
+
+        {/* Botón Ingresos */}
         <button
           onClick={() => router.push("/Ingresos-Egresos")}
           className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
@@ -169,6 +182,8 @@ export default function ContadorDashboard() {
           <FaDollarSign />
           Ingresos
         </button>
+
+        {/* Botón Archivados */}
         <button
           onClick={() => router.push("/archivados")}
           className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
