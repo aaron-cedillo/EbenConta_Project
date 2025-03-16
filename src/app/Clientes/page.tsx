@@ -368,6 +368,7 @@ export default function Clientes() {
           </div>
         </div>
       )}
+      
        {/* Modal de confirmación de eliminación */}
        {showDeleteModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
