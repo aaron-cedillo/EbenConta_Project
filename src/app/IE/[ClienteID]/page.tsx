@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import { getUserName } from "../../services/authService";
 import * as XLSX from "xlsx";
-import { FaHome, FaUser, FaDollarSign, FaFolderOpen } from "react-icons/fa";
+import { FaHome, FaUser, FaDollarSign, FaFolderOpen, FaSearch, FaMoneyBillWave, FaCalendarAlt } from "react-icons/fa";
 
 interface FacturaResumen {
   Fecha: string;
@@ -208,7 +208,7 @@ export default function IngresosEgresos() {
         </div>
 
         {/* Sección de Filtro y Totales */}
-        <div className="mt-6 flex justify-between items-center max-w-6xl mx-auto">
+        <div className="mt-6 flex items-center justify-center gap-8 max-w-6xl mx-auto">
           {/* Filtro de Fechas */}
           <div className="bg-white p-6 rounded-lg shadow-lg border-2 border-[#FCA311] flex items-center gap-4 w-[500px]">
             <div className="flex flex-col">
@@ -235,104 +235,103 @@ export default function IngresosEgresos() {
               onClick={fetchResumenFacturas}
               className="w-14 h-14 flex items-center justify-center bg-[#14213D] text-white rounded-lg hover:bg-[#0E1A2B] transition shadow-md"
             >
-              🔍
+              <FaSearch size={24} />
             </button>
           </div>
 
           {/* Totales de Ingresos y Egresos */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-md">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3 bg-white p-4 rounded-lg shadow-md w-52">
               <div className="w-12 h-12 flex items-center justify-center bg-[#14213D] text-white rounded-full">
-                💰
+                <FaMoneyBillWave size={24} />
               </div>
               <div>
-                <p className="text-[#14213D] text-lg">Ingresos</p>
-                <p className="text-2xl font-bold text-[#14213D]">${totalIngreso.toFixed(2)}</p>
+                <p className="text-[#14213D] text-md">Ingresos</p>
+                <p className="text-xl font-bold text-[#14213D]">${totalIngreso.toFixed(2)}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-md">
+            <div className="flex items-center gap-3 bg-white p-4 rounded-lg shadow-md w-52">
               <div className="w-12 h-12 flex items-center justify-center bg-[#FCA311] text-white rounded-full">
-                📅
+                <FaCalendarAlt size={24} />
               </div>
               <div>
-                <p className="text-[#14213D] text-lg">Egresos</p>
-                <p className="text-2xl font-bold text-[#FCA311]">${totalEgreso.toFixed(2)}</p>
+                <p className="text-[#14213D] text-md">Egresos</p>
+                <p className="text-xl font-bold text-[#FCA311]">${totalEgreso.toFixed(2)}</p>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Botones de exportación */}
+        <div className="flex justify-center gap-4 mt-6">
+          <button onClick={() => exportarAExcel("I")} className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition">
+            Exportar Ingresos
+          </button>
+          <button onClick={() => exportarAExcel("E")} className="px-6 py-3 bg-[#D62828] text-white font-semibold rounded-lg hover:bg-[#A12020] transition">
+            Exportar Egresos
+          </button>
+          <button onClick={() => exportarAExcel()} className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition">
+            Exportar Todos
+          </button>
+        </div>
 
-      {/* Botones de exportación */}
-      <div className="flex justify-center gap-4 mt-6">
-        <button onClick={() => exportarAExcel("I")} className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition">
-          Exportar Ingresos
-        </button>
-        <button onClick={() => exportarAExcel("E")} className="px-6 py-3 bg-[#D62828] text-white font-semibold rounded-lg hover:bg-[#A12020] transition">
-          Exportar Egresos
-        </button>
-        <button onClick={() => exportarAExcel()} className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition">
-          Exportar Todos
-        </button>
-      </div>
-
-      {/* Lista de Facturas */}
-      <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
-        <h2 className="text-xl font-semibold text-[#14213D] mb-4">Lista de Facturas</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse rounded-lg shadow-lg">
-            <thead>
-              <tr className="bg-[#FCA311] text-white">
-                <th className="p-3 text-left">Fecha</th>
-                <th className="p-3 text-left">Monto</th>
-                <th className="p-3 text-left">Tipo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {facturas.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
-                    No se encontraron facturas.
-                  </td>
+        {/* Lista de Facturas */}
+        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+          <h2 className="text-xl font-semibold text-[#14213D] mb-4">Lista de Facturas</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse rounded-lg shadow-lg">
+              <thead>
+                <tr className="bg-[#FCA311] text-white">
+                  <th className="p-3 text-left">Fecha</th>
+                  <th className="p-3 text-left">Monto</th>
+                  <th className="p-3 text-left">Tipo</th>
                 </tr>
-              ) : (
-                facturas.map((factura, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-100 transition">
-                    <td className="p-3 text-[#14213D]">{factura.Fecha}</td>
-                    <td className="p-3 text-[#14213D]">
-                      ${factura.Total.toFixed(2)}
-                    </td>
-                    <td
-                      className={`p-3 font-semibold ${factura.Tipo === "I" ? "text-green-600" : "text-red-600"
-                        }`}
-                    >
-                      {factura.Tipo === "I" ? "Ingreso" : "Egreso"}
+              </thead>
+              <tbody>
+                {facturas.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
+                      No se encontraron facturas.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Modal de confirmación de cierre de sesión */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-md w-96 border-2 border-[#FCA311]">
-            <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
-            <div className="mt-4 flex justify-end gap-4">
-              <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 bg-gray-400 text-white rounded">
-                Cancelar
-              </button>
-              <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded">
-                Confirmar
-              </button>
-            </div>
+                ) : (
+                  facturas.map((factura, index) => (
+                    <tr key={index} className="border-b hover:bg-gray-100 transition">
+                      <td className="p-3 text-[#14213D]">{factura.Fecha}</td>
+                      <td className="p-3 text-[#14213D]">
+                        ${factura.Total.toFixed(2)}
+                      </td>
+                      <td
+                        className={`p-3 font-semibold ${factura.Tipo === "I" ? "text-green-600" : "text-red-600"
+                          }`}
+                      >
+                        {factura.Tipo === "I" ? "Ingreso" : "Egreso"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Modal de confirmación de cierre de sesión */}
+        {showLogoutModal && (
+          <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-md w-96 border-2 border-[#FCA311]">
+              <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
+              <div className="mt-4 flex justify-end gap-4">
+                <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 bg-gray-400 text-white rounded">
+                  Cancelar
+                </button>
+                <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded">
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }  
