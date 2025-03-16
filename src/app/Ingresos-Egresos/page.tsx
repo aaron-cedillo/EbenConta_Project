@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { logoutUser, getUserName } from "../services/authService";
 import axios from "axios";
-import { FaHome, FaUser, FaDollarSign, FaFolderOpen } from "react-icons/fa";
+import { FaHome, FaUser, FaDollarSign, FaFolderOpen, FaEye } from "react-icons/fa";
 
 interface Cliente {
   ClienteID: number;
@@ -162,32 +162,44 @@ export default function IngresosEgresos() {
           />
         </div>
 
-        {/* Lista de clientes */}
-        <div className="mt-6 w-full flex justify-center">
-          <div className="w-full max-w-7xl space-y-4">
-            {filteredClientes.length === 0 ? (
-              <p className="text-gray-300 text-center text-lg">No se encontraron clientes.</p>
-            ) : (
-              filteredClientes.map((cliente) => (
-                <div
-                  key={cliente.ClienteID}
-                  className="bg-white border p-6 rounded-lg shadow-lg flex justify-between items-center w-full"
-                >
-                  <div className="text-[#14213D]">
-                    <h3 className="text-lg font-semibold">{cliente.Nombre}</h3>
-                    <p className="text-sm text-gray-500">{cliente.RFC}</p>
-                  </div>
-                  <button
-                    onClick={() => router.push(`/IE/${cliente.ClienteID}`)}
-                    className="px-6 py-3 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C] transition"
-                  >
-                    Ingresos-Egresos
-                  </button>
-                </div>
-              ))
-            )}
+        {/* Lista de Clientes */}
+<div className="mt-6 w-full flex justify-center">
+  <div className="w-full max-w-7xl bg-white p-6 rounded-lg shadow">
+    {filteredClientes.length === 0 ? (
+      <p className="text-gray-300 text-center text-lg">No se encontraron clientes.</p>
+    ) : (
+      filteredClientes.map((cliente) => (
+        <div key={cliente.ClienteID} className="flex justify-between items-center border-b py-4">
+          {/* Información del Cliente */}
+          <div className="text-[#14213D]">
+            <h3 className="text-lg font-bold">{cliente.Nombre}</h3>
+            <p className="text-gray-500">{cliente.RFC}</p>
+          </div>
+
+          {/* Botones de Acción */}
+          <div className="flex gap-2">
+            {/* Ver Cliente */}
+            <button
+              onClick={() => router.push(`/ClienteDashboard/${cliente.ClienteID}`)}
+              className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
+            >
+              <FaEye />
+            </button>
+
+            {/* Ingresos-Egresos */}
+            <button
+              onClick={() => router.push(`/IE/${cliente.ClienteID}`)}
+              className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+            >
+              <FaDollarSign />
+            </button>
           </div>
         </div>
+      ))
+    )}
+  </div>
+</div>
+
 
         {/* Modal de confirmación de cierre de sesión */}
         {showLogoutModal && (

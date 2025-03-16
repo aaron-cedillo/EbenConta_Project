@@ -235,7 +235,6 @@ export default function Clientes() {
         <div className="grid grid-cols-3 gap-6 mt-6">
           {/* Lista de Clientes */}
           <div className="col-span-2 bg-white p-6 rounded-lg shadow">
-            <h3 className="text-2xl font-bold text-[#14213D] mb-4">Clientes</h3>
             {clientes.map((cliente) => (
               <div key={cliente.ClienteID} className="flex justify-between items-center border-b py-4">
                 {/* Información del Cliente */}
