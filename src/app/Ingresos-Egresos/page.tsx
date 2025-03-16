@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getUserName } from "../services/authService";
+import { logoutUser, getUserName } from "../services/authService";
 import axios from "axios";
 import { FaHome, FaUser, FaDollarSign, FaFolderOpen } from "react-icons/fa";
 
@@ -74,8 +74,9 @@ export default function IngresosEgresos() {
   };
 
   const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
+      logoutUser();
+      router.push("/login");
+    };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -126,7 +127,7 @@ export default function IngresosEgresos() {
       <div className="flex-1 p-8">
         {/* Encabezado */}
         <div className="flex justify-between items-center bg-white p-4 shadow rounded-lg">
-          <h2 className="text-2xl font-bold text-[#14213D]">Ingresos y Egresos</h2>
+          <h2 className="text-2xl font-bold text-[#14213D]">Clientes</h2>
           <div className="relative flex items-center gap-4">
             <p className="text-lg font-semibold text-[#14213D]">{userName}</p>
             <div className="relative" ref={userMenuRef}>
@@ -191,7 +192,7 @@ export default function IngresosEgresos() {
         {/* Modal de confirmación de cierre de sesión */}
         {showLogoutModal && (
           <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-md w-96 border-2 border-[#FCA311]">
+            <div className="bg-white p-6 rounded-lg shadow-md w-96">
               <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
               <div className="mt-4 flex justify-end gap-4">
                 <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 bg-gray-400 text-white rounded">
@@ -204,6 +205,7 @@ export default function IngresosEgresos() {
             </div>
           </div>
         )}
+        
       </div>
     </div>
   );

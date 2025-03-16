@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { getUserName } from "../../services/authService";
+import { logoutUser, getUserName } from "../../services/authService";
 import * as XLSX from "xlsx";
 import { FaHome, FaUser, FaDollarSign, FaFolderOpen, FaSearch, FaMoneyBillWave, FaCalendarAlt } from "react-icons/fa";
 
@@ -131,8 +131,9 @@ export default function IngresosEgresos() {
   };
 
   const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
+        logoutUser();
+        router.push("/login");
+      };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
