@@ -131,9 +131,9 @@ export default function IngresosEgresos() {
   };
 
   const handleLogout = () => {
-        logoutUser();
-        router.push("/login");
-      };
+    logoutUser();
+    router.push("/login");
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -276,9 +276,10 @@ export default function IngresosEgresos() {
           </button>
         </div>
 
-        {/* Lista de Facturas */}
-        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
-          <h2 className="text-xl font-semibold text-[#14213D] mb-4">Lista de Facturas</h2>
+        {/* Listado de Facturas */}
+        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-5xl mx-auto">
+          <h2 className="text-xl font-semibold text-[#14213D] mb-4">Listado de Facturas</h2>
+
           <div className="overflow-x-auto">
             <table className="w-full border-collapse rounded-lg shadow-lg">
               <thead>
@@ -298,13 +299,14 @@ export default function IngresosEgresos() {
                 ) : (
                   facturas.map((factura, index) => (
                     <tr key={index} className="border-b hover:bg-gray-100 transition">
-                      <td className="p-3 text-[#14213D]">{factura.Fecha}</td>
-                      <td className="p-3 text-[#14213D]">
+                      <td className="p-3 text-[#14213D] font-medium">
+                        {new Date(factura.Fecha).toLocaleDateString("es-ES", { day: "numeric", month: "numeric", year: "numeric" })}
+                      </td>
+                      <td className="p-3 text-[#14213D] font-medium">
                         ${factura.Total.toFixed(2)}
                       </td>
                       <td
-                        className={`p-3 font-semibold ${factura.Tipo === "I" ? "text-green-600" : "text-red-600"
-                          }`}
+                        className={`p-3 font-semibold ${factura.Tipo === "I" ? "text-green-600" : "text-red-600"}`}
                       >
                         {factura.Tipo === "I" ? "Ingreso" : "Egreso"}
                       </td>
