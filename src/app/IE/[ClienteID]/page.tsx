@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation"; // useParams para obtener ClienteID
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { getUserName } from "../../services/authService"; // Eliminamos getUserId porque ya no lo necesitamos
+import { getUserName } from "../../services/authService";
 import * as XLSX from "xlsx";
+import { FaHome, FaUser, FaDollarSign, FaFolderOpen } from "react-icons/fa";
 
 interface FacturaResumen {
   Fecha: string;
@@ -13,9 +14,10 @@ interface FacturaResumen {
 
 export default function IngresosEgresos() {
   const router = useRouter();
-  const { ClienteID } = useParams(); // Obtenemos ClienteID desde la URL
+  const { ClienteID } = useParams();
   const [userName, setUserName] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [facturas, setFacturas] = useState<FacturaResumen[]>([]);
   const [totalIngreso, setTotalIngreso] = useState<number>(0);
   const [totalEgreso, setTotalEgreso] = useState<number>(0);
@@ -23,30 +25,7 @@ export default function IngresosEgresos() {
   const [fechaFin, setFechaFin] = useState<string>("");
   const [clienteNombre, setClienteNombre] = useState<string>("");
 
-  useEffect(() => {
-    const fetchClienteNombre = async () => {
-      if (!ClienteID) return;
-
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://localhost:3001/api/clientes/${ClienteID}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        if (response.data && response.data.Nombre) {
-          setClienteNombre(response.data.Nombre);
-        } else {
-          setClienteNombre("ClienteDesconocido");
-        }
-      } catch (error) {
-        console.error("Error al obtener el nombre del cliente:", error);
-        setClienteNombre("ClienteDesconocido");
-      }
-    };
-
-    fetchClienteNombre();
-  }, [ClienteID]);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const storedUserName = getUserName();
@@ -54,28 +33,41 @@ export default function IngresosEgresos() {
       setUserName(storedUserName);
     }
 
-    if (!ClienteID) {
-      console.error("⚠️ No se encontró el ClienteID en la URL.");
-    } else {
-      console.log(`🔍 ClienteID obtenido de la URL: ${ClienteID}`);
-    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsModalOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const fetchClienteNombre = async () => {
+      if (!ClienteID) return;
+
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`http://localhost:3001/api/clientes/${ClienteID}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setClienteNombre(response.data.Nombre || "Cliente Desconocido");
+      } catch (error) {
+        console.error("Error al obtener el nombre del cliente:", error);
+        setClienteNombre("Cliente Desconocido");
+      }
+    };
+
+    fetchClienteNombre();
   }, [ClienteID]);
 
   const fetchResumenFacturas = useCallback(async () => {
-    if (!ClienteID) {
-      console.warn("🚨 Intento de obtener facturas sin ClienteID.");
-      return;
-    }
+    if (!ClienteID) return;
 
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("⚠️ Usuario no autenticado.");
-        return;
-      }
-
-      console.log(`🔍 Buscando facturas para ClienteID: ${ClienteID}`);
-
       const response = await axios.get<FacturaResumen[]>(
         `http://localhost:3001/api/facturas/cliente/${ClienteID}`,
         {
@@ -84,235 +76,263 @@ export default function IngresosEgresos() {
         }
       );
 
-      // Validamos que `Total` siempre tenga un valor válido
       const facturasLimpias = response.data.map((factura) => ({
         Fecha: factura.Fecha || "Desconocida",
-        Total: factura.Total ?? 0, // Si Total es null o undefined, lo convertimos en 0
+        Total: factura.Total ?? 0,
         Tipo: factura.Tipo,
       }));
 
       setFacturas(facturasLimpias);
 
-      const totalIngreso = facturasLimpias
-        .filter((factura) => factura.Tipo === "I")
-        .reduce((sum, factura) => sum + factura.Total, 0);
+      setTotalIngreso(
+        facturasLimpias.filter((factura) => factura.Tipo === "I").reduce((sum, factura) => sum + factura.Total, 0)
+      );
 
-      const totalEgreso = facturasLimpias
-        .filter((factura) => factura.Tipo === "E")
-        .reduce((sum, factura) => sum + factura.Total, 0);
-
-      setTotalIngreso(totalIngreso);
-      setTotalEgreso(totalEgreso);
+      setTotalEgreso(
+        facturasLimpias.filter((factura) => factura.Tipo === "E").reduce((sum, factura) => sum + factura.Total, 0)
+      );
     } catch (error) {
-      console.error("❌ Error al obtener las facturas:", error);
+      console.error("Error al obtener las facturas:", error);
     }
   }, [ClienteID, fechaInicio, fechaFin]);
 
-
   const exportarAExcel = (tipo?: "I" | "E") => {
     let datosAExportar = facturas;
-  
+
     if (tipo) {
       datosAExportar = facturas.filter((factura) => factura.Tipo === tipo);
     }
-  
+
     if (datosAExportar.length === 0) {
       console.error("No hay facturas para exportar.");
       return;
     }
-  
+
     const worksheetData = [
-      ["Fecha", "Monto", "Tipo"], // Encabezados
+      ["Fecha", "Monto", "Tipo"],
       ...datosAExportar.map((factura) => [
         factura.Fecha,
         factura.Total,
         factura.Tipo === "I" ? "Ingreso" : "Egreso",
       ]),
       [],
-      ["", "Total:", datosAExportar.reduce((sum, factura) => sum + factura.Total, 0)], // Total en la última fila
+      ["", "Total:", datosAExportar.reduce((sum, factura) => sum + factura.Total, 0)],
     ];
-  
+
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-  
-    // Ajustar el ancho de columnas para mejor visibilidad
-    worksheet["!cols"] = [
-      { wch: 15 }, // Fecha
-      { wch: 15 }, // Monto
-      { wch: 15 }, // Tipo
-    ];
-  
-    // Crear libro y agregar la hoja
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Resumen");
-  
-    // Nombre del archivo según tipo de exportación
-    let fileName = `facturas_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
-    if (tipo === "I") {
-      fileName = `ingresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
-    } else if (tipo === "E") {
-      fileName = `egresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
-    }
-  
-    XLSX.writeFile(workbook, fileName);
-  };  
 
-  useEffect(() => {
-    if (ClienteID) {
-      fetchResumenFacturas();
-    }
-  }, [fetchResumenFacturas, ClienteID]);
+    let fileName = `facturas_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
+    if (tipo === "I") fileName = `ingresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
+    if (tipo === "E") fileName = `egresos_${clienteNombre.replace(/\s+/g, "_")}.xlsx`;
+
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
-      {/* Encabezado */}
-      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
-        <h2 className="text-2xl font-semibold text-[#14213D]">{`Bienvenido, ${userName || "Cargando..."}`}</h2>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/Ingresos-Egresos")}
-            className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] transition"
-          >
-            Volver al menú de Ingresos y Egresos
-          </button>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 bg-[#E63946] text-white font-semibold rounded-lg hover:bg-[#D62839] transition"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="w-64 bg-[#14213D] text-white p-6 flex flex-col">
+        <h1 className="text-2xl font-bold mb-6">
+          eben<span className="text-[#FCA311]">Conta</span>
+        </h1>
+
+        {/* Botón Dashboard */}
+        <button
+          onClick={() => router.push("/ContadorDashboard")}
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
+        >
+          <FaHome />
+          Dashboard
+        </button>
+
+        {/* Botón Clientes */}
+        <button
+          onClick={() => router.push("/Clientes")}
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
+        >
+          <FaUser />
+          Clientes
+        </button>
+
+        {/* Botón Ingresos */}
+        <button
+          onClick={() => router.push("/Ingresos-Egresos")}
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
+        >
+          <FaDollarSign />
+          Ingresos
+        </button>
+
+        {/* Botón Archivados */}
+        <button
+          onClick={() => router.push("/archivados")}
+          className="flex items-center gap-2 text-white hover:bg-[#FCA311] px-4 py-3 rounded transition"
+        >
+          <FaFolderOpen />
+          Archivados
+        </button>
       </div>
 
-      {/* Filtro por fecha */}
-      <div className="mt-4 bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
-        <h2 className="text-lg font-semibold text-[#14213D] mb-4">Filtrar por Fecha</h2>
-        <div className="flex items-center gap-4">
-          <div>
-            <label className="block text-[#14213D] font-medium">Fecha Inicio:</label>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
-            />
+      {/* Contenido */}
+      <div className="flex-1 p-8">
+        {/* Encabezado */}
+        <div className="flex justify-between items-center bg-white p-4 shadow rounded-lg">
+          <h2 className="text-2xl font-bold text-[#14213D]">Ingresos y Egresos</h2>
+          <div className="relative flex items-center gap-4">
+            <p className="text-lg font-semibold text-[#14213D]">{userName}</p>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsModalOpen(!isModalOpen)}
+                className="w-10 h-10 flex items-center justify-center bg-gray-300 rounded-full"
+              >
+                <FaUser size={20} />
+              </button>
+              {isModalOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white shadow-md rounded-lg p-2">
+                  <button
+                    onClick={() => setShowLogoutModal(true)}
+                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-200 rounded-lg"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <div>
-            <label className="block text-[#14213D] font-medium">Fecha Fin:</label>
-            <input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D]"
-            />
-          </div>
-          <button
-            onClick={fetchResumenFacturas}
-            className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C] transition"
-          >
-            Filtrar
-          </button>
         </div>
-      </div>
+
+        {/* Sección de Filtro y Totales */}
+        <div className="mt-6 flex justify-between items-center max-w-6xl mx-auto">
+          {/* Filtro de Fechas */}
+          <div className="bg-white p-6 rounded-lg shadow-lg border-2 border-[#FCA311] flex items-center gap-4 w-[500px]">
+            <div className="flex flex-col">
+              <label className="block text-[#14213D] font-semibold">Fecha de Inicio</label>
+              <input
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                className="p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] bg-gray-100 w-full"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="block text-[#14213D] font-semibold">Fecha de Fin</label>
+              <input
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+                className="p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] bg-gray-100 w-full"
+              />
+            </div>
+
+            {/* Botón de búsqueda estilizado */}
+            <button
+              onClick={fetchResumenFacturas}
+              className="w-14 h-14 flex items-center justify-center bg-[#14213D] text-white rounded-lg hover:bg-[#0E1A2B] transition shadow-md"
+            >
+              🔍
+            </button>
+          </div>
+
+          {/* Totales de Ingresos y Egresos */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-md">
+              <div className="w-12 h-12 flex items-center justify-center bg-[#14213D] text-white rounded-full">
+                💰
+              </div>
+              <div>
+                <p className="text-[#14213D] text-lg">Ingresos</p>
+                <p className="text-2xl font-bold text-[#14213D]">${totalIngreso.toFixed(2)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-md">
+              <div className="w-12 h-12 flex items-center justify-center bg-[#FCA311] text-white rounded-full">
+                📅
+              </div>
+              <div>
+                <p className="text-[#14213D] text-lg">Egresos</p>
+                <p className="text-2xl font-bold text-[#FCA311]">${totalEgreso.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
 
       {/* Botones de exportación */}
-      <div className="flex justify-center gap-4 mt-4">
-        <button
-          onClick={() => exportarAExcel("I")}
-          className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition"
-        >
+      <div className="flex justify-center gap-4 mt-6">
+        <button onClick={() => exportarAExcel("I")} className="px-6 py-3 bg-[#FCA311] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition">
           Exportar Ingresos
         </button>
-        <button
-          onClick={() => exportarAExcel("E")}
-          className="px-6 py-3 bg-[#D62828] text-white font-semibold rounded-lg hover:bg-[#A12020] transition"
-        >
+        <button onClick={() => exportarAExcel("E")} className="px-6 py-3 bg-[#D62828] text-white font-semibold rounded-lg hover:bg-[#A12020] transition">
           Exportar Egresos
         </button>
-        <button
-          onClick={() => exportarAExcel()}
-          className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#E08E00] transition"
-        >
+        <button onClick={() => exportarAExcel()} className="px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#388E3C] transition">
           Exportar Todos
         </button>
       </div>
 
-      {/* Tabla de Facturas */}
+      {/* Lista de Facturas */}
       <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
-        <h2 className="text-xl font-semibold text-[#14213D] mb-4">Facturas</h2>
-        <table className="w-full table-auto border-collapse rounded-lg shadow-lg">
-          <thead>
-            <tr className="bg-[#FCA311] text-white">
-              <th className="py-2 px-4">Fecha</th>
-              <th className="py-2 px-4">Monto</th>
-              <th className="py-2 px-4">Tipo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {facturas.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
-                  No se encontraron facturas.
-                </td>
+        <h2 className="text-xl font-semibold text-[#14213D] mb-4">Lista de Facturas</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse rounded-lg shadow-lg">
+            <thead>
+              <tr className="bg-[#FCA311] text-white">
+                <th className="p-3 text-left">Fecha</th>
+                <th className="p-3 text-left">Monto</th>
+                <th className="p-3 text-left">Tipo</th>
               </tr>
-            ) : (
-              facturas.map((factura, index) => (
-                <tr key={index} className="border-b hover:bg-gray-100 transition">
-                  <td className="py-2 px-4 text-[#14213D]">{factura.Fecha}</td>
-                  <td className="py-2 px-4 text-[#14213D]">
-                    {factura.Total !== undefined ? factura.Total.toFixed(2) : "0.00"}
-                  </td>
-                  <td
-                    className={`py-2 px-4 font-semibold ${factura.Tipo === "I" ? "text-green-600" : "text-red-600"
-                      }`}
-                  >
-                    {factura.Tipo === "I" ? "Ingreso" : "Egreso"}
+            </thead>
+            <tbody>
+              {facturas.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
+                    No se encontraron facturas.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Totales de Ingresos y Egresos */}
-      <div className="mt-6 flex justify-between items-center text-lg font-semibold text-white max-w-4xl mx-auto bg-[#FCA311] p-6 rounded-lg shadow-md">
-        <div className="flex flex-col items-center w-1/2">
-          <p className="text-xl whitespace-nowrap">Total Ingresos</p> {/* Mantiene todo en una sola línea */}
-          <p className="text-2xl font-bold mt-2">${totalIngreso.toFixed(2)}</p>
-        </div>
-        <div className="w-1 h-16 bg-white mx-4"></div> {/* Línea divisoria */}
-        <div className="flex flex-col items-center w-1/2">
-          <p className="text-xl whitespace-nowrap">Total Egresos</p> {/* Mantiene todo en una sola línea */}
-          <p className="text-2xl font-bold mt-2">${totalEgreso.toFixed(2)}</p>
+              ) : (
+                facturas.map((factura, index) => (
+                  <tr key={index} className="border-b hover:bg-gray-100 transition">
+                    <td className="p-3 text-[#14213D]">{factura.Fecha}</td>
+                    <td className="p-3 text-[#14213D]">
+                      ${factura.Total.toFixed(2)}
+                    </td>
+                    <td
+                      className={`p-3 font-semibold ${factura.Tipo === "I" ? "text-green-600" : "text-red-600"
+                        }`}
+                    >
+                      {factura.Tipo === "I" ? "Ingreso" : "Egreso"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {/* Modal de confirmación de cierre de sesión */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-[#14213D] bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96 border-2 border-[#FCA311]">
-            <h2 className="text-lg font-semibold text-[#14213D]">Confirmar cierre de sesión</h2>
-            <p className="mt-2 text-[#14213D]">¿Estás seguro de que quieres cerrar sesión?</p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-[#6C757D] text-white rounded-lg hover:bg-[#545B62] transition"
-              >
+      {showLogoutModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-96 border-2 border-[#FCA311]">
+            <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres cerrar sesión?</h3>
+            <div className="mt-4 flex justify-end gap-4">
+              <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 bg-gray-400 text-white rounded">
                 Cancelar
               </button>
-              <button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  router.push("/login");
-                }}
-                className="px-4 py-2 bg-[#D62828] text-white rounded-lg hover:bg-[#A12020] transition"
-              >
-                Cerrar Sesión
+              <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded">
+                Confirmar
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }  
