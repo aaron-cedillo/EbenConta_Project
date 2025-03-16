@@ -18,6 +18,8 @@ export default function Clientes() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [nombre, setNombre] = useState("");
   const [rfc, setRfc] = useState("");
@@ -47,6 +49,20 @@ export default function Clientes() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredClientes(clientes);
+    } else {
+      setFilteredClientes(
+        clientes.filter(
+          (cliente) =>
+            cliente.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            cliente.RFC.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+  }, [searchTerm, clientes]);
+
   const fetchClientes = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -54,6 +70,7 @@ export default function Clientes() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setClientes(response.data);
+      setFilteredClientes(response.data);
     } catch (error) {
       console.error("Error al obtener clientes:", error);
     }
@@ -231,42 +248,57 @@ export default function Clientes() {
           </div>
         </div>
 
+        {/* Barra de búsqueda */}
+        <div className="mt-6 flex justify-center">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar cliente..."
+            className="w-full max-w-7xl p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-md text-lg"
+          />
+        </div>
+
         {/* Contenido de Clientes */}
         <div className="grid grid-cols-3 gap-6 mt-6">
           {/* Lista de Clientes */}
           <div className="col-span-2 bg-white p-6 rounded-lg shadow">
-            {clientes.map((cliente) => (
-              <div key={cliente.ClienteID} className="flex justify-between items-center border-b py-4">
-                {/* Información del Cliente */}
-                <div>
-                  <h3 className="text-lg font-bold text-[#14213D]">{cliente.Nombre}</h3>
-                  <p className="text-gray-500">{cliente.RFC}</p>
+            {filteredClientes.length === 0 ? (
+              <p className="text-gray-300 text-center text-lg">No se encontraron clientes.</p>
+            ) : (
+              filteredClientes.map((cliente) => (
+                <div key={cliente.ClienteID} className="flex justify-between items-center border-b py-4">
+                  {/* Información del Cliente */}
+                  <div>
+                    <h3 className="text-lg font-bold text-[#14213D]">{cliente.Nombre}</h3>
+                    <p className="text-gray-500">{cliente.RFC}</p>
+                  </div>
+
+                  {/* Botones de Acción */}
+                  <div className="flex gap-2">
+                    {/* Editar Cliente */}
+                    <button onClick={() => handleEditClient(cliente)} className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                      <FaEdit />
+                    </button>
+
+                    {/* Ver Cliente */}
+                    <button onClick={() => router.push(`/ClienteDashboard/${cliente.ClienteID}`)} className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                      <FaEye />
+                    </button>
+
+                    {/* Ingresos-Egresos */}
+                    <button onClick={() => router.push(`/IE/${cliente.ClienteID}`)} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
+                      <FaDollarSign />
+                    </button>
+
+                    {/* Eliminar Cliente */}
+                    <button onClick={() => handleClienteArchive(cliente)} className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                      <FaTrash />
+                    </button>
+                  </div>
                 </div>
-
-                {/* Botones de Acción */}
-                <div className="flex gap-2">
-                  {/* Editar Cliente */}
-                  <button onClick={() => handleEditClient(cliente)} className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    <FaEdit />
-                  </button>
-
-                  {/* Ver Cliente */}
-                  <button onClick={() => router.push(`/ClienteDashboard/${cliente.ClienteID}`)} className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
-                    <FaEye />
-                  </button>
-
-                  {/* Ingresos-Egresos */}
-                  <button onClick={() => router.push(`/IE/${cliente.ClienteID}`)} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
-                    <FaDollarSign />
-                  </button>
-
-                  {/* Eliminar Cliente */}
-                  <button onClick={() => handleClienteArchive(cliente)} className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                    <FaTrash />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Formulario de Cliente */}
@@ -367,9 +399,9 @@ export default function Clientes() {
           </div>
         </div>
       )}
-      
-       {/* Modal de confirmación de eliminación */}
-       {showDeleteModal && (
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-md w-96">
             <h3 className="text-lg font-semibold text-[#14213D]">¿Seguro que quieres eliminar este cliente?, al eliminarlo se ira al apartado de archivados</h3>
