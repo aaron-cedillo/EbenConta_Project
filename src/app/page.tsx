@@ -7,7 +7,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirige al login o donde necesites
+    
     router.push('/login');
   }, [router]);
 

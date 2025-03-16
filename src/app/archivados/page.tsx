@@ -96,7 +96,7 @@ export default function Archivados() {
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
-      setClienteAEliminar(null); // 🔥 Asegura limpiar el estado después de eliminar
+      setClienteAEliminar(null); 
     }
   };  
 

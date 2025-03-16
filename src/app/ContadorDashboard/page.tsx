@@ -98,7 +98,7 @@ export default function ContadorDashboard() {
       });
 
       alert("Alerta eliminada correctamente.");
-      obtenerAlertas(); // Recargar las alertas
+      obtenerAlertas(); 
     } catch (error) {
       console.error("Error al eliminar alerta:", error);
       alert("Hubo un error al eliminar la alerta.");
@@ -112,12 +112,12 @@ export default function ContadorDashboard() {
       const token = localStorage.getItem("token");
       await axios.put(
         `http://localhost:3001/api/alertas/${alertaID}/estado`,
-        { Estado: "Atendida" }, // Nuevo estado
+        { Estado: "Atendida" }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       alert("Estado de alerta actualizado.");
-      obtenerAlertas(); // Recargar las alertas
+      obtenerAlertas(); 
     } catch (error) {
       console.error("Error al cambiar el estado de la alerta:", error);
       alert("Hubo un error al actualizar el estado de la alerta.");

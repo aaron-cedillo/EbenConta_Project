@@ -154,7 +154,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar vacío */}
+      {/* Sidebar */}
       <div className="w-64 bg-[#14213D] text-white p-6 flex flex-col">
         <h1 className="text-2xl font-bold mb-6">
           eben<span className="text-[#FCA311]">Conta</span>
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
           />
         </div>
 
-        {/* Contenedor Principal para organizar lista y formulario */}
+        {/* Contenedor */}
         <div className="grid grid-cols-3 gap-6 mt-6">
           {/* Lista de Contadores */}
           <div className="col-span-2 bg-white p-6 rounded-lg shadow">
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* Formulario de Contador con nuevo diseño */}
+          {/* Formulario de Contador */}
           <div className="bg-white rounded-lg shadow-md w-full border border-gray-300">
             {/* Cabecera del formulario */}
             <h3 className="text-xl font-bold text-white bg-[#14213D] p-4 rounded-t-lg">

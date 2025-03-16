@@ -10,7 +10,6 @@ interface LoginResponse {
   expirationDate?: string; 
 }
 
-// Iniciar sesión
 export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
   try {
     if (!email || !password) {
@@ -21,22 +20,20 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
     const response = await axios.post(`${API_URL}/login`, { email, password });
 
     if (response.data.token) {
-      // Guardar tanto el token como el nombre del usuario en localStorage solo si estamos en el cliente
+      
       if (typeof window !== "undefined") {
         localStorage.setItem("token", response.data.token);
-        localStorage.setItem("nombre", response.data.nombre); // Guardar el nombre del usuario
-        localStorage.setItem("UsuarioID", response.data.usuarioID); // Guardar UsuarioID
+        localStorage.setItem("nombre", response.data.nombre); 
+        localStorage.setItem("UsuarioID", response.data.usuarioID); 
 
-        // Si el rol es 'contador', guardar la fecha de expiración
         if (response.data.rol === "contador" && response.data.expirationDate) {
-          localStorage.setItem("expirationDate", response.data.expirationDate); // Guardar expirationDate solo para 'contador'
+          localStorage.setItem("expirationDate", response.data.expirationDate);
         }
 
-        // Redirigir a Dashboard según el rol
         if (response.data.rol === "admin") {
-          window.location.href = "/AdminDashboard"; // Redirigir al dashboard del admin
+          window.location.href = "/AdminDashboard"; 
         } else if (response.data.rol === "contador") {
-          window.location.href = "/ContadorDashboard"; // Redirigir al dashboard del contador
+          window.location.href = "/ContadorDashboard"; 
         } else {
           alert("Rol no reconocido");
         }
@@ -45,10 +42,10 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
       alert("Error en la respuesta del servidor");
     }
 
-    return response.data; // Devuelves el token, rol y nombre
+    return response.data; 
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      // Manejar el error de expiración de acceso de forma específica
+      
       if (error.response && error.response.data && error.response.data.message === "El acceso de este contador ha expirado") {
         alert("El acceso de este contador ha expirado. Por favor, contacta al administrador.");
       } else {
@@ -64,15 +61,14 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
   }
 };
 
-// Obtener usuario desde localStorage
 export const getUser = () => {
-  if (typeof window !== "undefined") { // Verificar que estamos en el cliente
+  if (typeof window !== "undefined") { 
     const token = localStorage.getItem("token");
     if (!token) return null;
 
     try {
-      // Decodificar el token para obtener la información del usuario
-      const base64Url = token.split(".")[1]; // Extraer el payload del JWT
+      
+      const base64Url = token.split(".")[1]; 
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const jsonPayload = decodeURIComponent(
         atob(base64)
@@ -81,37 +77,34 @@ export const getUser = () => {
           .join("")
       );
 
-      return JSON.parse(jsonPayload); // Retorna el usuario decodificado
+      return JSON.parse(jsonPayload); 
     } catch (error) {
       console.error("Error al decodificar el token:", error);
       return null;
     }
   }
-  return null; // Si estamos en el servidor, devolver null
+  return null; 
 };
 
-// Obtener el nombre del usuario desde localStorage
 export const getUserName = () => {
-  if (typeof window !== "undefined") { // Verificar que estamos en el cliente
+  if (typeof window !== "undefined") { 
     return localStorage.getItem("nombre");
   }
-  return null; // Si estamos en el servidor, devolver null
+  return null; 
 };
 
-// Obtener el UsuarioID desde localStorage
 export const getUserId = () => {
-  if (typeof window !== "undefined") { // Verificar que estamos en el cliente
+  if (typeof window !== "undefined") { 
     return localStorage.getItem("UsuarioID");
   }
-  return null; // Si estamos en el servidor, devolver null
+  return null; 
 };
 
-// Cerrar sesión
 export const logoutUser = () => {
-  if (typeof window !== "undefined") { // Verificar que estamos en el cliente
+  if (typeof window !== "undefined") { 
     localStorage.removeItem("token");
-    localStorage.removeItem("nombre"); // Eliminar el nombre también
-    localStorage.removeItem("expirationDate"); // Eliminar expirationDate al cerrar sesión
-    window.location.href = "/login"; // Redirigir a la página de login
+    localStorage.removeItem("nombre"); 
+    localStorage.removeItem("expirationDate"); 
+    window.location.href = "/login"; 
   }
 };
