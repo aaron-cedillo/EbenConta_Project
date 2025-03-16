@@ -261,7 +261,7 @@ const ClienteDashboard = () => {
         {/* Subida de XML */}
         <div className="bg-white p-6 rounded-lg shadow mt-6">
           <h3 className="text-xl font-bold text-[#FCA311]">Subir Facturas (XML)</h3>
-          <input type="file" className="w-full mt-4 border p-2 rounded" multiple accept=".xml" onChange={handleFileChange} />
+          <input type="file" className="w-full mt-4 border p-2 rounded text-[#14213D]" multiple accept=".xml" onChange={handleFileChange} />
 
           {/* Mostrar archivos seleccionados */}
           {xmlFiles.length > 0 && (
@@ -286,35 +286,35 @@ const ClienteDashboard = () => {
           <div className="overflow-x-auto">
             <table className="w-full mt-4 border-collapse">
               <thead>
-                <tr className="bg-[#FCA311] text-white">
-                  <th className="p-2">RFC Emisor</th>
-                  <th className="p-2">Total</th>
-                  <th className="p-2">Tipo</th>
-                  <th className="p-2">UUID</th>
-                  <th className="p-2">Fecha</th>
-                  <th className="p-2">Estatus</th>
-                  <th className="p-2">Acciones</th>
+                <tr className="bg-[#FCA311] text-white text-left">
+                  <th className="p-3 text-center">RFC Emisor</th>
+                  <th className="p-3 text-center">Total</th>
+                  <th className="p-3 text-center">Tipo</th>
+                  <th className="p-3 text-center">UUID</th>
+                  <th className="p-3 text-center">Fecha</th>
+                  <th className="p-3 text-center">Estatus</th>
+                  <th className="p-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {facturas.map((factura) => (
-                  <tr key={factura.FacturaID} className="border-b hover:bg-gray-100">
-                    <td className="p-2">{factura.RFCEmisor}</td>
-                    <td className="p-2">${factura.Total.toFixed(2)}</td>
-                    <td className="p-2">{factura.Tipo}</td>
-                    <td className="p-2">{factura.UUID}</td>
-                    <td className="p-2">{new Date(factura.FechaEmision).toLocaleDateString()}</td>
-                    <td className={`p-2 font-semibold 
-                ${factura.Estatus === "Cancelada" ? "text-red-600" :
+                  <tr key={factura.FacturaID} className="border-b hover:bg-gray-100 text-center">
+                    <td className="p-3 text-[#14213D]">{factura.RFCEmisor}</td>
+                    <td className="p-3 text-[#14213D]">${factura.Total.toFixed(2)}</td>
+                    <td className="p-3 text-[#14213D]">{factura.Tipo}</td>
+                    <td className="p-3 text-[#14213D]">{factura.UUID}</td>
+                    <td className="p-3 text-[#14213D]">{new Date(factura.FechaEmision).toLocaleDateString()}</td>
+                    <td className={`p-3 font-semibold 
+              ${factura.Estatus === "Cancelada" ? "text-red-600" :
                         factura.Estatus === "Pendiente" ? "text-yellow-600" : "text-green-600"}`}>
                       {factura.Estatus}
                     </td>
                     {/* Agregar select para cambiar el estatus */}
-                    <td className="p-2">
+                    <td className="p-3 text-[#14213D]">
                       <select
                         value={factura.Estatus}
                         onChange={(e) => handleEstatusChange(factura.FacturaID, e.target.value)}
-                        className="border p-2 rounded"
+                        className="border p-2 rounded w-full text-center"
                       >
                         <option value="Activa">Activa</option>
                         <option value="Pendiente">Pendiente</option>
