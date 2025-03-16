@@ -1,51 +1,60 @@
-'use client';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-import { getUserName } from '../services/authService'; // Importar la función para obtener el nombre
+"use client";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import { getUserName, logoutUser } from "../services/authService";
+import { FaUser, FaEdit, FaTrash } from "react-icons/fa";
 
 interface Contador {
   UsuarioID: number;
   Nombre: string;
   Correo: string;
-  Contrasena: string;
+  Contrasena?: string;
   FechaExpiracion: string;
   Rol: string;
-  FechaRegistro: string;
 }
 
-const AdminDashboard = () => {
+export default function AdminDashboard() {
   const router = useRouter();
-  const [nombre, setNombre] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [fechaExpiracion, setFechaExpiracion] = useState('');
-  const [message, setMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
   const [contadores, setContadores] = useState<Contador[]>([]);
-  const [filteredContadores, setFilteredContadores] = useState<Contador[]>([]); // Nuevo estado para los contadores filtrados
+  const [nombre, setNombre] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [contrasena, setContrasena] = useState("");
+  const [fechaExpiracion, setFechaExpiracion] = useState("");
+  const [filteredContadores, setFilteredContadores] = useState<Contador[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [userName, setUserName] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // Control para el modal de logout
-  const [userName, setUserName] = useState(''); // Nombre del usuario logueado
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // Control para el modal de eliminación
-  const [selectedContador, setSelectedContador] = useState<Contador | null>(null); // Contador seleccionado para eliminar
-  const [initialPassword, setInitialPassword] = useState(''); // Para guardar la contraseña inicial
-  const [searchTerm, setSearchTerm] = useState(''); // Estado para el término de búsqueda
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedContador, setSelectedContador] = useState<Contador | null>(
+    null
+  );
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchContadores();
-    // Obtener el nombre del usuario desde localStorage
     const storedUserName = getUserName();
-    if (storedUserName) {
-      setUserName(storedUserName); // Establecer el nombre del usuario
-    }
+    if (storedUserName) setUserName(storedUserName);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsModalOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
-    // Filtrar contadores por nombre o correo cada vez que cambie el término de búsqueda
-    if (searchTerm.trim() === '') {
-      setFilteredContadores(contadores); // Mostrar todos los contadores si no hay término de búsqueda
+    if (searchTerm.trim() === "") {
+      setFilteredContadores(contadores);
     } else {
       setFilteredContadores(
         contadores.filter(
@@ -59,75 +68,63 @@ const AdminDashboard = () => {
 
   const fetchContadores = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/users');
-      const filteredContadores = response.data.filter((contador: Contador) => contador.Rol === 'contador');
-      setContadores(filteredContadores);
-      setFilteredContadores(filteredContadores); // Inicializamos la lista de contadores filtrados
+      const response = await axios.get(
+        "http://localhost:3001/api/admin/contadores"
+      );
+      setContadores(response.data);
+      setFilteredContadores(response.data);
     } catch (error) {
-      console.error('Error al obtener contadores:', error);
+      console.error("Error al obtener contadores:", error);
     }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
     try {
-      const updatedData: { nombre: string, correo: string, fechaExpiracion?: string, rol: string, contrasena: string } = {
+      const data = {
         nombre,
         correo,
-        fechaExpiracion: fechaExpiracion || undefined,
-        rol: 'contador',
-        contrasena: contrasena || initialPassword, // Aseguramos que la contraseña esté siempre presente
+        contrasena: contrasena || undefined,
+        fechaExpiracion,
       };
 
       if (editMode && selectedId !== null) {
-        // Enviar la solicitud de actualización
-        await axios.put(`http://localhost:3001/api/admin/editar/${selectedId}`, updatedData);
-        setMessage('Contador actualizado exitosamente');
+        // Editar contador
+        await axios.put(
+          `http://localhost:3001/api/admin/editar/${selectedId}`,
+          data
+        );
       } else {
-        await axios.post('http://localhost:3001/api/users/register', updatedData);
-        setMessage('Contador registrado exitosamente');
+        // Agregar nuevo contador
+        await axios.post("http://localhost:3001/api/admin/registrar", {
+          ...data,
+          Rol: "contador",
+        });
       }
 
       resetForm();
-      fetchContadores(); // Actualizar lista
+      fetchContadores();
     } catch (error) {
-      console.error('Error al registrar/editar contador:', error);
-      setErrorMessage('Error al procesar la solicitud');
+      console.error("Error al registrar/editar contador:", error);
     }
   };
 
   const handleEdit = (contador: Contador) => {
-    setNombre(contador.Nombre || '');
-    setCorreo(contador.Correo || '');
-    setContrasena(''); // Inicializamos contrasena vacía
-    setFechaExpiracion(contador.FechaExpiracion || '');
+    setNombre(contador.Nombre || "");
+    setCorreo(contador.Correo || "");
+    setContrasena("");
+    setFechaExpiracion(contador.FechaExpiracion || "");
     setSelectedId(contador.UsuarioID);
-    setInitialPassword(contador.Contrasena); // Guardar la contraseña inicial
     setEditMode(true);
   };
 
   const resetForm = () => {
-    setNombre('');
-    setCorreo('');
-    setContrasena('');
-    setFechaExpiracion('');
+    setNombre("");
+    setCorreo("");
+    setContrasena("");
+    setFechaExpiracion("");
     setEditMode(false);
     setSelectedId(null);
-    setInitialPassword(''); // Limpiar la contraseña inicial
-  };
-
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
-  const confirmarLogout = () => {
-    setShowLogoutModal(false);
-    router.push('/login');
-  };
-
-  const cancelarLogout = () => {
-    setShowLogoutModal(false);
   };
 
   const handleDeleteContador = (contador: Contador) => {
@@ -135,184 +132,225 @@ const AdminDashboard = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmarEliminacion = () => {
-    if (selectedContador) {
-      handleDelete(selectedContador.UsuarioID);
-    }
-    setShowDeleteModal(false);
-  };
+  const confirmarEliminacion = async () => {
+    if (!selectedContador) return;
 
-  const cancelarEliminacion = () => {
-    setShowDeleteModal(false);
-  };
-
-  // Función para eliminar el contador
-  const handleDelete = async (contadorId: number) => {
     try {
-      await axios.delete(`http://localhost:3001/api/admin/eliminar/${contadorId}`);
-      setMessage('Contador eliminado exitosamente');
-      setContadores(contadores.filter((contador) => contador.UsuarioID !== contadorId));
-      setFilteredContadores(filteredContadores.filter((contador) => contador.UsuarioID !== contadorId)); // Actualizamos los contadores filtrados
+      await axios.delete(`http://localhost:3001/api/admin/eliminar/${selectedContador.UsuarioID}`);
+      setContadores((prevContadores) => prevContadores.filter((c) => c.UsuarioID !== selectedContador.UsuarioID));
+      setFilteredContadores((prevFiltered) => prevFiltered.filter((c) => c.UsuarioID !== selectedContador.UsuarioID));
     } catch (error) {
-      console.error('Error al eliminar contador:', error);
-      setErrorMessage('Error al eliminar contador');
+      console.error("Error al eliminar contador:", error);
     }
+
+    setShowDeleteModal(false);
+    setSelectedContador(null);
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    router.push("/login");
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#14213D] p-6">
-      {/* Encabezado */}
-      <div className="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-lg">
-        <h1 className="text-2xl font-semibold text-[#14213D]">Bienvenido, {userName}</h1>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition"
-        >
-          Cerrar Sesión
-        </button>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar vacío */}
+      <div className="w-64 bg-[#14213D] text-white p-6 flex flex-col">
+        <h1 className="text-2xl font-bold mb-6">
+          eben<span className="text-[#FCA311]">Conta</span>
+        </h1>
       </div>
 
-      {/* Contenido Principal */}
-      <h2 className="text-2xl font-semibold text-white mt-6 mb-6">
-        {editMode ? "Editar Contador" : "Registrar Contador"}
-      </h2>
+      {/* Contenido */}
+      <div className="flex-1 p-8">
+        {/* Encabezado */}
+        <div className="flex justify-between items-center bg-white p-4 shadow rounded-lg">
+          <h2 className="text-2xl font-bold text-[#14213D]">Administrador</h2>
+          <div className="relative flex items-center gap-4">
+            <p className="text-lg font-semibold text-[#14213D]">{userName}</p>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsModalOpen(!isModalOpen)}
+                className="w-10 h-10 flex items-center justify-center bg-gray-300 rounded-full"
+              >
+                <FaUser size={20} />
+              </button>
+              {isModalOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white shadow-md rounded-lg p-2">
+                  <button
+                    onClick={() => setShowLogoutModal(true)}
+                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-200 rounded-lg"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-      <form onSubmit={handleRegister} className="bg-white p-6 rounded-lg shadow-lg mb-8">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Nombre</label>
+        {/* Barra de búsqueda */}
+        <div className="mt-6 flex justify-center">
           <input
             type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar contador..."
+            className="w-full max-w-7xl p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-[#14213D] shadow-md text-lg"
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Correo</label>
-          <input
-            type="email"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            required
-            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-          <input
-            type="password"
-            value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-            placeholder="******"
-            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Fecha de Expiración</label>
-          <input
-            type="date"
-            value={fechaExpiracion}
-            onChange={(e) => setFechaExpiracion(e.target.value)}
-            className="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-[#FCA311] text-white py-3 rounded-md hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311]"
-        >
-          {editMode ? "Actualizar Contador" : "Registrar Contador"}
-        </button>
-        {editMode && (
-          <button
-            type="button"
-            onClick={resetForm}
-            className="w-full mt-2 bg-gray-400 text-white py-2 rounded-md hover:bg-gray-500 focus:ring-2 focus:ring-gray-400"
-          >
-            Cancelar Edición
-          </button>
-        )}
-      </form>
 
-      {message && <p className="text-center text-green-600 font-semibold">{message}</p>}
-      {errorMessage && <p className="text-center text-red-600 font-semibold">{errorMessage}</p>}
+        {/* Contenedor Principal para organizar lista y formulario */}
+        <div className="grid grid-cols-3 gap-6 mt-6">
+          {/* Lista de Contadores */}
+          <div className="col-span-2 bg-white p-6 rounded-lg shadow">
+            {filteredContadores.length === 0 ? (
+              <p className="text-gray-300 text-center text-lg">No se encontraron contadores.</p>
+            ) : (
+              filteredContadores.map((contador) => (
+                <div
+                  key={contador.UsuarioID}
+                  className="flex justify-between items-center border-b py-4"
+                >
+                  {/* Información del Contador */}
+                  <div>
+                    <h3 className="text-lg font-bold text-[#14213D]">{contador.Nombre}</h3>
+                    <p className="text-gray-500">{contador.Correo}</p>
+                    <p className="text-gray-500">
+                      Expira: {new Date(contador.FechaExpiracion).toLocaleDateString("es-ES")}
+                    </p>
+                  </div>
 
-      <div className="mb-6">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar contador..."
-          className="p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FCA311] text-black"
-        />
-      </div>
+                  {/* Botones de Acción */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(contador)}
+                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteContador(contador)}
+                      className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
 
-      <h2 className="text-2xl font-semibold text-white mt-12 mb-6">Contadores Registrados</h2>
-      <table className="w-full table-auto border-collapse bg-white rounded-lg shadow-lg">
-        <thead>
-          <tr className="bg-[#FCA311] text-white text-left text-sm font-semibold">
-            <th className="py-2 px-4 text-white">Nombre</th>
-            <th className="py-2 px-4 text-white">Correo</th>
-            <th className="py-2 px-4 text-white">Fecha Expiración</th>
-            <th className="py-2 px-4 text-white">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredContadores.map((contador) => (
-            <tr key={contador.UsuarioID} className="border-b">
-              <td className="py-2 px-4 text-sm text-black">{contador.Nombre}</td>
-              <td className="py-2 px-4 text-sm text-black">{contador.Correo}</td>
-              <td className="py-2 px-4 text-sm text-black">{contador.FechaExpiracion}</td>
-              <td className="py-2 px-4 text-sm">
+          {/* Formulario de Contador con nuevo diseño */}
+          <div className="bg-white rounded-lg shadow-md w-full border border-gray-300">
+            {/* Cabecera del formulario */}
+            <h3 className="text-xl font-bold text-white bg-[#14213D] p-4 rounded-t-lg">
+              {editMode ? "Editar Contador" : "Agregar Contador"}
+            </h3>
+
+            {/* Contenido del formulario */}
+            <div className="p-6">
+              <form onSubmit={handleRegister}>
+                <div className="mb-4">
+                  <label className="block text-[#14213D] font-semibold">Nombre</label>
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    className="w-full p-3 border border-[#E5E7EB] rounded-md text-[#14213D] bg-white focus:ring-2 focus:ring-[#14213D] focus:outline-none"
+                    placeholder="Juan Pérez"
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-[#14213D] font-semibold">Correo</label>
+                  <input
+                    type="email"
+                    value={correo}
+                    onChange={(e) => setCorreo(e.target.value)}
+                    className="w-full p-3 border border-[#E5E7EB] rounded-md text-[#14213D] bg-white focus:ring-2 focus:ring-[#14213D] focus:outline-none"
+                    placeholder="correo@gmail.com"
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-[#14213D] font-semibold">Contraseña</label>
+                  <input
+                    type="password"
+                    value={contrasena}
+                    onChange={(e) => setContrasena(e.target.value)}
+                    className="w-full p-3 border border-[#E5E7EB] rounded-md text-[#14213D] bg-white focus:ring-2 focus:ring-[#14213D] focus:outline-none"
+                    placeholder="********"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-[#14213D] font-semibold">Fecha de Expiración</label>
+                  <input
+                    type="date"
+                    value={fechaExpiracion}
+                    onChange={(e) => setFechaExpiracion(e.target.value)}
+                    className="w-full p-3 border border-[#E5E7EB] rounded-md text-[#14213D] bg-white focus:ring-2 focus:ring-[#14213D] focus:outline-none"
+                  />
+                </div>
+
+                {/* Botón Agregar/Actualizar */}
                 <button
-                  onClick={() => handleEdit(contador)}
-                  className="bg-[#FCA311] text-white py-1 px-3 rounded-md hover:bg-[#E08E00] focus:ring-2 focus:ring-[#FCA311] mr-2">
-                  Editar
+                  type="submit"
+                  className="w-full bg-[#FCA311] text-white font-semibold py-3 rounded-md hover:bg-[#E08E00] transition"
+                >
+                  {editMode ? "Actualizar Contador" : "Agregar"}
                 </button>
-                <button onClick={() => handleDeleteContador(contador)} className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500">
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Modal para confirmar cierre de sesión */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg text-black">
-            <h3 className="text-lg font-semibold">¿Estás seguro que deseas cerrar sesión?</h3>
-            <div className="flex justify-between mt-4">
-              <button onClick={cancelarLogout} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">
-                Cancelar
-              </button>
-              <button onClick={confirmarLogout} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
-                Cerrar sesión
-              </button>
+              </form>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Modal de confirmación de eliminación */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg text-black">
-            <h3 className="text-lg font-semibold">¿Estás seguro que deseas eliminar este contador?</h3>
-            <div className="flex justify-between mt-4">
-              <button onClick={cancelarEliminacion} className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">
-                Cancelar
-              </button>
-              <button onClick={confirmarEliminacion} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
-                Eliminar
-              </button>
+        {showDeleteModal && selectedContador && (
+          <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-md w-96">
+              <h3 className="text-lg font-semibold text-[#14213D]">
+                ¿Seguro que quieres eliminar a {selectedContador.Nombre}?
+              </h3>
+              <div className="mt-4 flex justify-end gap-4">
+                <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 bg-gray-400 text-white rounded">
+                  Cancelar
+                </button>
+                <button onClick={confirmarEliminacion} className="px-4 py-2 bg-red-500 text-white rounded">
+                  Confirmar
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Modal de confirmación de cierre de sesión */}
+        {showLogoutModal && (
+          <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-md w-96">
+              <h3 className="text-lg font-semibold text-[#14213D]">
+                ¿Seguro que quieres cerrar sesión?
+              </h3>
+              <div className="mt-4 flex justify-end gap-4">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="px-4 py-2 bg-gray-400 text-white rounded"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-500 text-white rounded"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default AdminDashboard;
+}
