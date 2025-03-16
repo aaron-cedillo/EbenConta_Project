@@ -24,6 +24,9 @@ export default function ContadorDashboard() {
   const [fechaVencimiento, setFechaVencimiento] = useState("");
   const [estado, setEstado] = useState("Pendiente");
   const [alertaSeleccionada, setAlertaSeleccionada] = useState<number | null>(null);
+  const [totalClientes, setTotalClientes] = useState<number>(0);
+  const [totalFacturas, setTotalFacturas] = useState<number>(0);
+
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +34,8 @@ export default function ContadorDashboard() {
     const storedUserName = getUserName();
     setUserName(storedUserName);
     obtenerAlertas();
+    obtenerTotalClientes();
+    obtenerTotalFacturas();
 
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -101,7 +106,7 @@ export default function ContadorDashboard() {
   };
 
   const handleCambiarEstado = async (alertaID: number | null) => {
-    if (!alertaID) return; // Evita errores si no hay alerta seleccionada
+    if (!alertaID) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -116,6 +121,30 @@ export default function ContadorDashboard() {
     } catch (error) {
       console.error("Error al cambiar el estado de la alerta:", error);
       alert("Hubo un error al actualizar el estado de la alerta.");
+    }
+  };
+
+  const obtenerTotalClientes = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:3001/api/estadisticas/clientes/total", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTotalClientes(response.data.total);
+    } catch (error) {
+      console.error("Error al obtener el total de clientes:", error);
+    }
+  };
+
+  const obtenerTotalFacturas = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:3001/api/estadisticas/facturas/total", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTotalFacturas(response.data.total);
+    } catch (error) {
+      console.error("Error al obtener el total de facturas:", error);
     }
   };
 
@@ -174,6 +203,27 @@ export default function ContadorDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Métricas de clientes y facturas */}
+        <div className="grid grid-cols-2 gap-6 mt-6">
+          {/* Clientes */}
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-[#14213D] text-white flex items-center justify-center rounded-full">
+              <FaUser size={30} />
+            </div>
+            <p className="text-gray-400 text-sm mt-2">Clientes</p>
+            <p className="text-2xl font-bold text-[#14213D]">{totalClientes}</p>
+          </div>
+
+          {/* Facturas Generadas */}
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-[#FCA311] text-white flex items-center justify-center rounded-full">
+              <FaFolderOpen size={30} />
+            </div>
+            <p className="text-gray-400 text-sm mt-2">Facturas generadas</p>
+            <p className="text-2xl font-bold text-[#14213D]">{totalFacturas}</p>
           </div>
         </div>
 
