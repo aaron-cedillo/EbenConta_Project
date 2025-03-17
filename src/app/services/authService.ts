@@ -2,6 +2,18 @@ import axios from "axios";
 
 const API_URL = "http://localhost:3001/api/users"; 
 
+// Crear una instancia de Axios con configuración
+const API = axios.create();
+
+API.interceptors.response.use(
+  (response) => response, 
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      logoutUser(); // Cierra sesión si el token es inválido o ha expirado
+    }
+    return Promise.reject(error);
+  }
+);
 
 interface LoginResponse {
   token: string;
