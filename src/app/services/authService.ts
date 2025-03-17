@@ -8,7 +8,7 @@ API.interceptors.response.use(
   (response) => response, 
   (error) => {
     if (error.response && error.response.status === 401) {
-      logoutUser(); // Cierra sesión si el token es inválido o ha expirado
+      logoutUser(); 
     }
     return Promise.reject(error);
   }
