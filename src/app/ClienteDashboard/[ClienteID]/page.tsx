@@ -309,7 +309,7 @@ const ClienteDashboard = () => {
                         factura.Estatus === "Pendiente" ? "text-yellow-600" : "text-green-600"}`}>
                       {factura.Estatus}
                     </td>
-                    {/* Agregar select para cambiar el estatus */}
+                    {/* Select para cambiar el estatus */}
                     <td className="p-3 text-[#14213D]">
                       <select
                         value={factura.Estatus}

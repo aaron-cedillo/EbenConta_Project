@@ -277,9 +277,8 @@ export default function IngresosEgresos() {
         </div>
 
         {/* Listado de Facturas */}
-        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg max-w-5xl mx-auto">
-          <h2 className="text-xl font-semibold text-[#14213D] mb-4">Listado de Facturas</h2>
-
+        <div className="bg-white p-6 rounded-lg shadow mt-6">
+          <h3 className="text-xl font-bold text-[#14213D]">Listado de Facturas</h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse rounded-lg shadow-lg">
               <thead>
